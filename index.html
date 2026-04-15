@@ -207,6 +207,7 @@ table.tl{border-collapse:collapse;min-width:100%}
     <div class="sec">
       <h2>Water Demand vs Production Analysis</h2>
       <div id="rsum" class="rs"></div>
+      <div id="parts-list" style="margin-top:20px"></div>
       <div class="cc"><canvas id="dc"></canvas></div>
       <div class="cc" style="height:280px;margin-top:20px"><canvas id="tc"></canvas></div>
       <div style="margin-top:20px;display:flex;gap:12px">
@@ -495,6 +496,19 @@ function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}
 // ================================================================
 function colEq(p){let e=[];p.forEach(n=>{if(n.isEq)e.push(n);if(n.isY&&n.br)n.br.forEach(b=>{e=e.concat(colEq(b))})});return e}
 function colRO(p){let r=null;p.forEach(n=>{if(n.ro)r=n;if(n.isY&&n.br)n.br.forEach(b=>{const x=colRO(b);if(x)r=x})});return r}
+function colAllNodes(p){let t=[];p.forEach(n=>{if(n.ct!=='select'&&!n.isY&&!n.isCV&&n.ct!=='mains')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colAllNodes(b))})});return t}
+function buildPartsList(){
+  const nodes=colAllNodes(mainPath);
+  if(!nodes.length){document.getElementById('parts-list').innerHTML='';return}
+  let h='<h2 style="margin-bottom:10px">Parts List</h2><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  h+='<thead><tr style="background:#1A1A1A;color:#fff"><th style="text-align:left;padding:7px 10px">Component</th><th style="text-align:left;padding:7px 10px">Details</th></tr></thead><tbody>';
+  nodes.forEach((n,i)=>{
+    const bg=i%2===0?'#F7F7F8':'#fff';
+    h+=`<tr style="background:${bg}"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #E5E7EB">${n.l}</td><td style="padding:6px 10px;color:#555;border-bottom:1px solid #E5E7EB">${n.s||''}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  document.getElementById('parts-list').innerHTML=h;
+}
 function colRT(p){let t=[];p.forEach(n=>{if(n.ct==='rotank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colRT(b))})});return t}
 function colWT(p){let t=[];p.forEach(n=>{if(n.ct==='watertank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colWT(b))})});return t}
 function hasCS(p){let f=false;p.forEach(n=>{if(n.ct==='cafestation')f=true;if(n.isY&&n.br)n.br.forEach(b=>{if(hasCS(b))f=true})});return f}
@@ -730,6 +744,7 @@ function runSim(){
   document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
   nodeNum=0;
   document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
+  buildPartsList();
 
   const ro=colRO(mainPath);
   const ppm=ro?ro.fr:0;
