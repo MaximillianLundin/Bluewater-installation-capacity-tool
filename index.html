@@ -59,11 +59,12 @@ button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weigh
 .fi:hover{opacity:.7}
 
 /* Y-split: branches fork up and down, inline with flow */
-.yfork{display:inline-flex;flex-direction:column;align-items:flex-start;position:relative;vertical-align:middle}
-.yfork::before{content:'';position:absolute;left:0;top:50%;bottom:0;width:3px;background:var(--bw);transform:none}
-.yfork::after{content:'';position:absolute;left:0;top:0;bottom:50%;width:3px;background:var(--bw)}
-.ybr{display:flex;align-items:center;gap:0;padding:8px 0}
-.yarm{width:20px;height:3px;background:var(--bw);flex-shrink:0}
+.yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
+.ybr{display:flex;align-items:center;gap:0;padding:4px 0}
+.yconn{width:20px;flex-shrink:0;align-self:stretch;position:relative}
+.yconn::before{content:'';position:absolute;top:50%;left:0;right:0;height:3px;background:var(--bw)}
+.yconn.ytop::after{content:'';position:absolute;top:50%;bottom:0;left:0;width:3px;background:var(--bw)}
+.yconn.ybot::after{content:'';position:absolute;bottom:50%;top:0;left:0;width:3px;background:var(--bw)}
 
 /* EQUIP */
 .eqi{background:var(--gr);border-radius:8px;padding:14px;margin-bottom:10px}
@@ -123,7 +124,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   @page{size:A4;margin:15mm}
   header{position:static;border-bottom:2px solid var(--bw)}
   .snav,.bs,.bp,.bd,.bsm,.utog,button{display:none!important}
-  body{background:#fff;font-size:11px}
+  body{background:#fff;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .sec{box-shadow:none;border:1px solid #ddd}
   .ctn{padding:10px 0}
   /* Page 1: Results */
@@ -134,6 +135,10 @@ table.tl{border-collapse:collapse;min-width:100%}
   .fn.sel{display:none}
   .fl .ll{display:none}
   .fn .nnum{display:flex}
+  /* Force connector lines to print */
+  .fl,.yconn::before,.yconn::after{background:#4A6AF5!important}
+  .fn{border:2px solid #4A6AF5!important}
+  .fn.eq{border-color:#666!important}
 }
 
 #print-page2{display:none}
@@ -244,6 +249,7 @@ const CAT = {
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
   seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
   rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
+  watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Floatswitch: på vid 20%, av vid 95%',isWT:true},
   cafestation:{c:'Storage & Treatment',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
   mineraliser:{c:'Storage & Treatment',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
   espresso:{c:'Equipment',l:'Espresso Machine',s:'Espresso / Tea / Americano',isEq:true,et:'espresso'},
@@ -301,8 +307,8 @@ function rPath(path,pid,showNums){
       h+=`<div class="fi yc" onclick="fiClick('${pid}',${i})">Y</div>`;
       // T-split: inline fork, top branch up, bottom branch down
       h+=`<div class="yfork">`;
-      h+=`<div class="ybr"><div class="yarm"></div>${rPath(nd.br[0],pid+'-0-'+nd.id,showNums)}</div>`;
-      h+=`<div class="ybr"><div class="yarm"></div>${rPath(nd.br[1],pid+'-1-'+nd.id,showNums)}</div>`;
+      h+=`<div class="ybr"><div class="yconn ytop"></div>${rPath(nd.br[0],pid+'-0-'+nd.id,showNums)}</div>`;
+      h+=`<div class="ybr"><div class="yconn ybot"></div>${rPath(nd.br[1],pid+'-1-'+nd.id,showNums)}</div>`;
       h+=`</div>`;
     } else if(nd.isCV){
       h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
@@ -347,6 +353,7 @@ function selClick(pid,idx){
     const c=CAT[k];
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="addRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isWT) h+=`<div class="mbt" onclick="addWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="addN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
   h+='<div style="margin-top:12px"><button class="bs bsm" style="width:100%" onclick="cm()">Cancel</button></div>';
@@ -360,6 +367,7 @@ function lnClick(pid,idx){
     const c=CAT[k];
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="insRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isWT) h+=`<div class="mbt" onclick="insWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="insN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
   h+='<div style="margin-top:12px"><button class="bs bsm" style="width:100%" onclick="cm()">Cancel</button></div>';
@@ -405,13 +413,28 @@ function insN(pid,idx,key){
   renderFlow();cm();
 }
 
-function addRT(pid,idx){sm(`<h3>RO Tank Volume</h3><p>Nominal volume (liters). Usable = 50%.</p><div style="margin-bottom:12px"><input type="number" id="rtv" value="12" min="1" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
-function insRT(pid,idx){sm(`<h3>RO Tank Volume</h3><p>Nominal volume (liters). Usable = 50%.</p><div style="margin-bottom:12px"><input type="number" id="rtv" value="12" min="1" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function rtModalBody(){return`<div style="margin-bottom:12px"><label>Tankstorlek</label><select id="rtvol" onchange="calcRTUsable()"><option value="2">2 L</option><option value="4">4 L</option><option value="12" selected>12 L</option><option value="20">20 L</option></select></div><div style="margin-bottom:12px"><label>Förladdningstryck</label><select id="rtpc" onchange="calcRTUsable()"><option value="0.5" selected>0.5 bar (rekommenderat)</option><option value="1.0">1.0 bar</option><option value="1.5">1.5 bar</option><option value="2.0">2.0 bar</option><option value="2.5">2.5 bar</option></select></div><p id="rt-info" style="font-size:13px;color:#4A6AF5;font-weight:600;margin-bottom:12px">Lagrat: 10.0 L · Användbart (85%): 8.5 L</p>`}
+function addRT(pid,idx){sm(`<h3>RO Tank</h3>${rtModalBody()}<div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insRT(pid,idx){sm(`<h3>RO Tank</h3>${rtModalBody()}<div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 
+function calcRTUsable(){const v=parseFloat(document.getElementById('rtvol').value)||12;const pc=parseFloat(document.getElementById('rtpc').value)||0.5;const stored=v*(1-pc/3);const usable=stored*0.85;document.getElementById('rt-info').textContent='Lagrat: '+stored.toFixed(1)+' L · Användbart (85%): '+usable.toFixed(1)+' L'}
 function doRT(pid,idx){
-  const v=parseFloat(document.getElementById('rtv').value)||12;
+  const vol=parseFloat(document.getElementById('rtvol').value)||12;
+  const pc=parseFloat(document.getElementById('rtpc').value)||0.5;
+  const stored=+(vol*(1-pc/3)).toFixed(2);
+  const usable=+(stored*0.85).toFixed(2);
   const p=resP(pid);
-  p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+v+'L)',s:(v*0.5).toFixed(1)+'L usable',vol:v,isEq:false,isCV:false,isY:false});
+  p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+vol+'L)',s:stored.toFixed(1)+'L lagrat / '+usable.toFixed(1)+'L användbart',vol:vol,precharge:pc,volStored:stored,volUsable:usable,isEq:false,isCV:false,isY:false});
+  ensSel(p);renderFlow();cm();
+}
+function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar Spirit vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar Spirit vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function doWT(pid,idx){
+  const vol=parseFloat(document.getElementById('wtv').value)||10;
+  const trigger=+(vol*0.20).toFixed(1);
+  const stopAt=+(vol*0.95).toFixed(1);
+  const p=resP(pid);
+  p.splice(idx,0,{id:gid(),ct:'watertank',l:'Water Tank ('+vol+'L)',s:'På vid '+trigger+'L · Av vid '+stopAt+'L',vol:vol,wtTrigger:trigger,wtStop:stopAt,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
 
@@ -423,7 +446,7 @@ function mkNd(key,c){
     const n=eqN[c.et];
     nd.l=c.l+' '+n;nd.et=c.et;
     if(c.et==='espresso') eqCfg[nd.id]={t:'espresso',drinks:JSON.parse(JSON.stringify(DRINKS)),dt:'Espresso'};
-    else if(c.et==='filter') eqCfg[nd.id]={t:'filter',vol:4500,mins:5};
+    else if(c.et==='filter') eqCfg[nd.id]={t:'filter',vol:4500};
     else if(c.et==='hotwater') eqCfg[nd.id]={t:'hotwater',vol:300};
     else if(c.et==='coldwater') eqCfg[nd.id]={t:'coldwater',vol:500};
     else if(c.et==='bottles') eqCfg[nd.id]={t:'bottles',vol:330};
@@ -472,6 +495,7 @@ function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}
 function colEq(p){let e=[];p.forEach(n=>{if(n.isEq)e.push(n);if(n.isY&&n.br)n.br.forEach(b=>{e=e.concat(colEq(b))})});return e}
 function colRO(p){let r=null;p.forEach(n=>{if(n.ro)r=n;if(n.isY&&n.br)n.br.forEach(b=>{const x=colRO(b);if(x)r=x})});return r}
 function colRT(p){let t=[];p.forEach(n=>{if(n.ct==='rotank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colRT(b))})});return t}
+function colWT(p){let t=[];p.forEach(n=>{if(n.ct==='watertank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colWT(b))})});return t}
 function hasCS(p){let f=false;p.forEach(n=>{if(n.ct==='cafestation')f=true;if(n.isY&&n.br)n.br.forEach(b=>{if(hasCS(b))f=true})});return f}
 
 // ================================================================
@@ -488,7 +512,8 @@ function renderEq(){
       d='Configure drink volumes:';
       x='<div class="dt">'+c.drinks.map((dk,i)=>`<div class="db"><label>${dk.n}</label><input type="number" value="${imp?mlV(dk.ml):dk.ml}" onfocus="this.select()" onchange="uDk('${eq.id}',${i},this.value)"> ${mlU()}</div>`).join('')+'</div>';
     } else if(c.t==='filter'){
-      d=`<div style="display:flex;gap:12px;margin-top:6px"><div><label>Presumed brew volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uFlt('${eq.id}','v',this.value)"></div><div><label>Minutes of flow</label><input type="number" value="${c.mins}" style="width:80px" onfocus="this.select()" onchange="uFlt('${eq.id}','m',this.value)"></div></div>`;
+      const cups=Math.floor(c.vol/200);
+      d=`<div style="margin-top:6px"><label>Volume of brew tank (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uFlt('${eq.id}',this.value)"><div class="note" style="margin-top:4px">${cups} koppar per batch (à 200ml). Påfyllning triggas när sista koppen går åt.</div></div>`;
     } else if(c.t==='hotwater'){
       d=`<div style="margin-top:6px"><label>Presumed draw volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"></div>`;
     } else if(c.t==='coldwater'){
@@ -501,7 +526,7 @@ function renderEq(){
 }
 
 function uDk(id,i,v){const val=imp?Math.round(parseFloat(v)*29.5735):parseInt(v);if(eqCfg[id]&&eqCfg[id].drinks)eqCfg[id].drinks[i].ml=val||0}
-function uFlt(id,f,v){if(!eqCfg[id])return;if(f==='v')eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0;if(f==='m')eqCfg[id].mins=parseInt(v)||1}
+function uFlt(id,v){if(!eqCfg[id])return;eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0;renderEq()}
 function uVol(id,v){if(!eqCfg[id])return;eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0}
 
 // ================================================================
@@ -519,6 +544,8 @@ function getTLRows(){
         if(!tl[key])tl[key]={};
         rows.push({type:'drink',label:'  '+dk.n+' ('+dk.ml+(imp?' '+mlU():'ml')+')',id:key,ml:dk.ml,eqId:eq.id,drink:dk.n});
       });
+    } else if(c.t==='filter'){
+      rows.push({type:'eq',label:eq.l+' (koppar à 200ml)',id:eq.id,ml:200,noGMT:true,eqId:eq.id});
     } else {
       rows.push({type:'eq',label:eq.l,id:eq.id,ml:c.vol,eqId:eq.id});
     }
@@ -567,7 +594,7 @@ function buildTL(){
 
 function gMT(m){
   const rows=getTLRows();let t=0;
-  rows.forEach(r=>{if(r.type!=='header'){const v=tl[r.id]?.[m];if(v&&v>0)t+=v*r.ml}});
+  rows.forEach(r=>{if(r.type!=='header'&&!r.noGMT){const v=tl[r.id]?.[m];if(v&&v>0)t+=v*r.ml}});
   return t;
 }
 
@@ -649,7 +676,8 @@ function fillR(){
       [0,1,2,3,5,7,8,10,12,14,15,17,19,20,22,24,25,27,28,30,32,33,35,37,38,40,42,44,45,47,48,50,52,54,55,57,58].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
       [0,5,10,15,20,25,30,35,40,45,50,55].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
     } else if(c.t==='filter'){
-      [0,15,30,45].forEach(s=>{for(let i=0;i<c.mins&&(s+i)<60;i++)tl[eq.id][s+i]=(tl[eq.id][s+i]||0)+1});
+      // Busy: ~1 cup every 4 min
+      for(let m=4;m<60;m+=4)tl[eq.id][m]=(tl[eq.id][m]||0)+1;
     } else if(c.t==='coldwater'){
       [2,5,8,12,18,22,28,32,38,42,48,52,58].forEach(m=>{tl[eq.id][m]=1});
     } else if(c.t==='bottles'){
@@ -669,7 +697,8 @@ function fillS(){
       const dk=c.drinks[0];const key=eq.id+'_'+dk.n;
       for(let m=0;m<60;m+=3)tl[key][m]=1;
     } else if(c.t==='filter'){
-      [0,20,40].forEach(s=>{for(let i=0;i<c.mins&&(s+i)<60;i++)tl[eq.id][s+i]=1});
+      // Light: ~1 cup every 10 min
+      for(let m=10;m<60;m+=10)tl[eq.id][m]=1;
     } else if(c.t==='coldwater'){
       for(let m=2;m<60;m+=5)tl[eq.id][m]=1;
     } else if(c.t==='bottles'){
@@ -704,19 +733,36 @@ function runSim(){
   const ro=colRO(mainPath);
   const ppm=ro?ro.fr:0;
   const tanks=colRT(mainPath);
+  const wtanks=colWT(mainPath);
   const cafe=hasCS(mainPath);
-  const rtUsable=tanks.reduce((s,t)=>s+(t.vol||0)*0.5,0);
+  // RO Tank: stored = vol*(1-precharge/3), trigger at 15% remaining
+  const rtUsable=tanks.reduce((s,t)=>s+(t.volStored!=null?t.volStored:t.vol*(1-0.5/3)),0);
 
-  // Cafe Station: 10L, trigger at 2L, refills at RO rate
+  // Cafe Station: 10L, trigger at 2L (floatswitch), fills to 10L
   let cafeLvl=cafe?10:0;
   let cafeRefilling=false;
 
-  // RO Tank: usable vol, trigger at 50% of usable, refills at RO rate
+  // RO Tank: trigger when 85% consumed (15% remaining), fills to full stored volume
   let roLvl=rtUsable;
   let roRefilling=false;
-  const roTrigger=rtUsable*0.5;
+  const roTrigger=rtUsable*0.15;
 
-  const mins=[],demD=[],prodD=[],roD=[],cafeD=[];
+  // Water Tank w float switch: trigger at 20%, stop at 95%
+  const wtTotalVol=wtanks.reduce((s,t)=>s+(t.vol||0),0);
+  let wtLvl=wtTotalVol;
+  let wtRefilling=false;
+  const wtTriggerLvl=wtTotalVol*0.20;
+  const wtStopLvl=wtTotalVol*0.95;
+
+  // Filter Brewer: batch mode — starts full, refill when last cup consumed
+  const filterEqs=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='filter');
+  const filterStates=filterEqs.map(e=>{
+    const vol=(eqCfg[e.id].vol||4500)/1000; // liters
+    const cups=Math.max(1,Math.floor((eqCfg[e.id].vol||4500)/200));
+    return {id:e.id,vol,cups,consumed:0,refilling:false,minsLeft:0};
+  });
+
+  const mins=[],demD=[],prodD=[],roD=[],cafeD=[],wtD=[];
   let totalDem=0,defMin=0;
 
   for(let m=0;m<60;m++){
@@ -729,8 +775,14 @@ function runSim(){
       if(cafeLvl<0){defMin++;cafeLvl=0}
     }
 
-    // Draw from RO Tank (for equipment not on cafe station — simplified: if no cafe, draw from RO tank)
-    if(!cafe && rtUsable>0 && dem>0){
+    // Draw from Water Tank w float switch (if present and no cafe station)
+    if(!cafe && wtTotalVol>0 && rtUsable===0 && dem>0){
+      wtLvl-=dem;
+      if(wtLvl<0){defMin++;wtLvl=0}
+    }
+
+    // Draw from RO Tank (if no cafe and no pure water tank)
+    if(!cafe && wtTotalVol===0 && rtUsable>0 && dem>0){
       roLvl-=dem;
       if(roLvl<0){defMin++;roLvl=0}
     }
@@ -740,7 +792,7 @@ function runSim(){
       if(cafeLvl<=2) cafeRefilling=true;
       if(cafeLvl>=10) cafeRefilling=false;
       if(cafeRefilling){
-        cafeLvl+=ppm; // refill at RO rate per minute
+        cafeLvl+=ppm;
         if(cafeLvl>10) cafeLvl=10;
       }
     }
@@ -755,11 +807,41 @@ function runSim(){
       }
     }
 
-    demD.push(dem*1000);
-    prodD.push(ppm*1000);
+    // Water Tank w float switch refill logic
+    if(wtTotalVol>0){
+      if(wtLvl<=wtTriggerLvl) wtRefilling=true;
+      if(wtLvl>=wtStopLvl) wtRefilling=false;
+      if(wtRefilling){
+        wtLvl+=ppm;
+        if(wtLvl>wtStopLvl) wtLvl=wtStopLvl;
+      }
+    }
+
+    // Filter Brewer batch logic
+    let filterRefilling=false;
+    let filterDem=0;
+    filterStates.forEach(fs=>{
+      if(fs.refilling){
+        filterRefilling=true;
+        filterDem+=fs.vol; // demanding water this minute to fill brewer
+        fs.minsLeft--;
+        if(fs.minsLeft<=0){fs.refilling=false;fs.consumed=0}
+      }
+      const cupsThisMin=tl[fs.id]?.[m]||0;
+      fs.consumed+=cupsThisMin;
+      if(!fs.refilling&&fs.consumed>=fs.cups){
+        fs.refilling=true;
+        fs.minsLeft=Math.max(1,Math.ceil(fs.vol/ppm));
+        fs.consumed=0;
+      }
+    });
+
+    demD.push((dem+filterDem)*1000);
+    prodD.push((cafeRefilling||roRefilling||wtRefilling||filterRefilling)?ppm*1000:0);
     roD.push(roLvl);
     cafeD.push(cafeLvl);
-    totalDem+=dem;
+    wtD.push(wtLvl);
+    totalDem+=dem+filterDem;
   }
 
   const totalProd=ppm*60;
@@ -792,6 +874,7 @@ function runSim(){
   const ds=[];
   if(cafe)ds.push({label:'Cafe Station ('+tU+')',data:imp?cafeD.map(v=>lV(v)):cafeD,borderColor:'#4A6AF5',backgroundColor:'rgba(74,106,245,.15)',fill:true,tension:.3,borderWidth:2});
   if(rtUsable>0)ds.push({label:'RO Tank ('+tU+')',data:imp?roD.map(v=>lV(v)):roD,borderColor:'#888',backgroundColor:'rgba(100,100,100,.1)',fill:true,tension:.3,borderWidth:2});
+  if(wtTotalVol>0)ds.push({label:'Water Tank ('+tU+')',data:imp?wtD.map(v=>lV(v)):wtD,borderColor:'#2E7D32',backgroundColor:'rgba(46,125,50,.1)',fill:true,tension:.3,borderWidth:2});
 
   tCh=new Chart(document.getElementById('tc').getContext('2d'),{
     type:'line',data:{labels:mins.map(String),datasets:ds},
