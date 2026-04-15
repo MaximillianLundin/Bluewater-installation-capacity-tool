@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bluewater Installation & Capacity Tool</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--bw:#4A6AF5;--bwl:#EEF1FE;--bwd:#2D4AD0;--blk:#1A1A1A;--gr:#F7F7F8;--gm:#D1D5DB;--wh:#FFF;--red:#D32F2F;--grn:#2E7D32;--org:#F59E0B;--r:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:var(--gr);color:var(--blk);line-height:1.5}
+
+header{background:var(--wh);padding:14px 32px;display:flex;align-items:center;gap:20px;border-bottom:2px solid var(--bw);position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;white-space:nowrap}
+.logo-c{width:20px;height:20px;border:2.5px solid var(--blk);border-radius:50%;flex-shrink:0}
+.tool-t{font-size:14px;color:#888;font-weight:400;border-left:1px solid var(--gm);padding-left:20px}
+.utog{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.utog .tb{display:flex;border:2px solid var(--bw);border-radius:24px;overflow:hidden}
+.utog .tb button{padding:5px 16px;border:none;background:var(--wh);font-size:12px;font-weight:600;cursor:pointer;color:var(--bw);transition:.15s}
+.utog .tb button.act{background:var(--bw);color:var(--wh)}
+
+.ctn{max-width:1400px;margin:0 auto;padding:20px 32px}
+h2{font-size:17px;font-weight:700;margin-bottom:14px}
+.sec{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.note{font-size:12px;color:#999;font-style:italic}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:#555}
+select,input[type="number"],textarea{width:100%;padding:8px 12px;border:1px solid var(--gm);border-radius:8px;font-size:14px;background:var(--wh);transition:.15s;font-family:inherit}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--bw);box-shadow:0 0 0 2px rgba(74,106,245,.15)}
+textarea{resize:vertical;min-height:80px}
+
+button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.bp{background:var(--bw);color:#fff}.bp:hover{background:var(--bwd)}
+.bs{background:var(--gr);color:var(--blk);border:1px solid var(--gm)}.bs:hover{background:#ECECEC}
+.bd{background:transparent;color:var(--red);border:1px solid var(--red);padding:4px 14px;font-size:12px;border-radius:24px}
+.bsm{padding:5px 14px;font-size:12px}
+.hidden{display:none!important}
+
+.snav{display:flex;gap:8px;margin-bottom:20px}
+.sb{padding:8px 24px;border:2px solid var(--gm);border-radius:24px;background:var(--wh);font-weight:600;font-size:14px;cursor:pointer;color:#999;transition:.15s}
+.sb.act{border-color:var(--bw);color:var(--bw);background:var(--bwl)}
+
+/* FLOW */
+.fa{background:var(--gr);border-radius:8px;padding:24px;margin-top:10px;overflow:auto;min-height:120px}
+.fr{display:flex;align-items:center;gap:0;flex-wrap:nowrap}
+.fn{background:var(--wh);border:2px solid var(--bw);border-radius:8px;padding:8px 14px;text-align:center;font-size:12px;font-weight:600;min-width:100px;white-space:nowrap;flex-shrink:0;cursor:pointer;transition:.15s;position:relative}
+.fn:hover{box-shadow:0 2px 8px rgba(74,106,245,.2)}
+.fn.src{background:var(--bwl)}
+.fn.eq{border-color:#666}
+.fn.sel{border-style:dashed;color:var(--bw);background:#FAFAFA;min-width:90px}
+.fn.sel:hover{background:var(--bwl)}
+.fn .ns{font-size:10px;font-weight:400;color:#777;margin-top:2px}
+.fn .nnum{position:absolute;top:-10px;left:-10px;width:22px;height:22px;background:var(--bw);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.fl{width:36px;height:3px;background:var(--bw);flex-shrink:0;cursor:pointer;position:relative;transition:.15s}
+.fl:hover{height:5px;margin-top:-1px;background:var(--bwd)}
+.fl .ll{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--bw);white-space:nowrap;font-weight:600}
+.fi{border-radius:4px;padding:3px 10px;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;transition:.15s}
+.fi.cv{background:#E8F5E9;border:1px solid var(--grn);color:var(--grn)}
+.fi.yc{background:#FFF3E0;border:1px solid var(--org);color:#B45309}
+.fi:hover{opacity:.7}
+
+/* Y-split: branches fork up and down, inline with flow */
+.yfork{display:inline-flex;flex-direction:column;align-items:flex-start;position:relative;vertical-align:middle}
+.yfork::before{content:'';position:absolute;left:0;top:50%;bottom:0;width:3px;background:var(--bw);transform:none}
+.yfork::after{content:'';position:absolute;left:0;top:0;bottom:50%;width:3px;background:var(--bw)}
+.ybr{display:flex;align-items:center;gap:0;padding:8px 0}
+.yarm{width:20px;height:3px;background:var(--bw);flex-shrink:0}
+
+/* EQUIP */
+.eqi{background:var(--gr);border-radius:8px;padding:14px;margin-bottom:10px}
+.eqt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.eqt .en{font-weight:700;min-width:180px}
+.dt{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.db{display:flex;align-items:center;gap:6px;background:var(--wh);border:1px solid var(--gm);border-radius:8px;padding:6px 12px}
+.db label{margin:0;font-size:12px;white-space:nowrap}
+.db input{width:60px;padding:4px 6px;font-size:13px;text-align:right;border-radius:6px}
+
+/* TIMELINE */
+.tlw{overflow-x:auto;max-height:500px;overflow-y:auto}
+table.tl{border-collapse:collapse;min-width:100%}
+.tl th,.tl td{border:1px solid #DDD;text-align:center;font-size:11px;min-width:34px;height:32px;padding:0;user-select:none}
+.tl th{background:var(--blk);color:#fff;font-weight:600;position:sticky;top:0;z-index:2}
+.tl th.eh{text-align:left;padding-left:8px;min-width:220px;position:sticky;left:0;z-index:3}
+.tl td.el{text-align:left;padding:4px 8px;font-weight:600;font-size:12px;position:sticky;left:0;background:var(--wh);z-index:1;white-space:nowrap}
+.tl td.ehead{background:#EAECF0;font-weight:700;font-size:12px;text-align:left;padding-left:8px;position:sticky;left:0;z-index:1;color:var(--blk)}
+.tl td.eheadcell{background:#EAECF0}
+.tl td.c{cursor:pointer;transition:.1s}
+.tl td.c:hover{background:var(--bwl)}
+.tl td.c.a{background:var(--bw);color:#fff;font-weight:700;font-size:10px}
+.tl td.c.a:hover{background:var(--bwd)}
+.tl td.c.foc{outline:2px solid var(--bwd);outline-offset:-2px}
+.tl tr.totr td{background:#FFF8E1;font-weight:600;font-size:10px}
+.tl tr.totr td.el{background:#FFF8E1}
+
+.tls{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:16px 20px;margin-top:16px}
+.tls h3{font-size:14px;font-weight:700;margin-bottom:10px}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.si{display:flex;justify-content:space-between;padding:8px 12px;background:var(--gr);border-radius:6px;font-size:13px}
+.si .sin{font-weight:600}.si .siv{color:var(--bw);font-weight:700}
+
+.cc{position:relative;height:400px;margin-top:16px}
+.rs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.rc{padding:16px;border-radius:var(--r);text-align:center}
+.rc.ok{background:#E8F5E9;border:1px solid var(--grn)}
+.rc.wa{background:#FFF8E1;border:1px solid var(--org)}
+.rc.cr{background:#FFEBEE;border:1px solid var(--red)}
+.rc .rv{font-size:28px;font-weight:700}.rc .rl{font-size:13px;color:#555;margin-top:4px}
+
+/* MODAL */
+.mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
+.mb{background:#fff;border-radius:var(--r);padding:24px;min-width:300px;max-width:460px;box-shadow:0 12px 40px rgba(0,0,0,.15);max-height:80vh;overflow-y:auto}
+.mb h3{margin-bottom:10px;font-size:16px}
+.mb p{font-size:13px;color:#666;margin-bottom:8px}
+.ma{display:flex;gap:8px;flex-wrap:wrap}
+.ma button{flex:1;min-width:80px}
+.mcat{font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-top:8px;border-top:1px solid #EEE}
+.mcat:first-child{border-top:none;margin-top:0;padding-top:0}
+.mbt{display:block;width:100%;text-align:left;padding:8px 14px;margin-bottom:4px;border:1px solid #E5E7EB;border-radius:8px;background:var(--wh);font-size:13px;font-weight:500;cursor:pointer;transition:.1s}
+.mbt:hover{background:var(--bwl);border-color:var(--bw)}
+.mbt .ms{font-size:11px;color:#888;font-weight:400}
+.specline{font-size:13px;color:#444;padding:3px 0}
+
+@media print{
+  @page{size:A4;margin:15mm}
+  header{position:static;border-bottom:2px solid var(--bw)}
+  .snav,.bs,.bp,.bd,.bsm,.utog,button{display:none!important}
+  body{background:#fff;font-size:11px}
+  .sec{box-shadow:none;border:1px solid #ddd}
+  .ctn{padding:10px 0}
+  /* Page 1: Results */
+  #step-4{display:block!important}
+  #step-1,#step-2,#step-3{display:none!important}
+  /* Page 2: Flow + Notes */
+  #print-page2{display:block!important;page-break-before:always}
+  .fn.sel{display:none}
+  .fl .ll{display:none}
+  .fn .nnum{display:flex}
+}
+
+#print-page2{display:none}
+.fn .nnum{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-c"></div><span>Bluewater</span></div>
+  <div class="tool-t">Installation & Capacity Tool</div>
+  <div class="utog">
+    <span>Units:</span>
+    <div class="tb">
+      <button class="act" id="bmet" onclick="setU('m')">Metric</button>
+      <button id="bimp" onclick="setU('i')">Imperial</button>
+    </div>
+  </div>
+</header>
+
+<div class="ctn">
+  <div class="snav">
+    <button class="sb act" onclick="goTo(1)" id="s1">1. Flow Diagram</button>
+    <button class="sb" onclick="goTo(2)" id="s2">2. Equipment</button>
+    <button class="sb" onclick="goTo(3)" id="s3">3. Timeline</button>
+    <button class="sb" onclick="goTo(4)" id="s4">4. Results</button>
+  </div>
+
+  <div id="step-1">
+    <div class="sec">
+      <h2>Water Flow Diagram</h2>
+      <div class="note">Click "+ Select" to add components. Click boxes to see specs/remove. Click lines to insert. Click CV/Y to remove.</div>
+      <div id="fa" class="fa"></div>
+      <div style="margin-top:16px">
+        <label>Installation Notes (for plumber)</label>
+        <textarea id="plumber-notes" placeholder="Write notes about the installation here..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="step-2" class="hidden">
+    <div class="sec">
+      <h2>Equipment Configuration</h2>
+      <div class="note" style="margin-bottom:12px">Configure equipment from your flow diagram.</div>
+      <div id="eql"></div>
+      <div id="eqe" style="color:#999;font-size:13px;padding:12px">No equipment yet. Add in Step 1.</div>
+    </div>
+  </div>
+
+  <div id="step-3" class="hidden">
+    <div class="sec">
+      <h2>1-Hour Demand Timeline</h2>
+      <div class="note">Click cells or use arrow keys + number pad. Delete/Backspace clears. Right-click removes one.</div>
+      <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="bs bsm" onclick="fillR()">Rush Hour</button>
+        <button class="bs bsm" onclick="fillS()">Steady</button>
+        <button class="bs bsm" onclick="clrTL()">Clear All</button>
+      </div>
+      <div class="tlw"><table class="tl" id="tlt"></table></div>
+      <div class="tls" id="tls"></div>
+    </div>
+  </div>
+
+  <div id="step-4" class="hidden">
+    <div class="sec">
+      <h2>Water Demand vs Production Analysis</h2>
+      <div id="rsum" class="rs"></div>
+      <div class="cc"><canvas id="dc"></canvas></div>
+      <div class="cc" style="height:280px;margin-top:20px"><canvas id="tc"></canvas></div>
+      <div style="margin-top:20px;display:flex;gap:12px">
+        <button class="bp" onclick="window.print()">Print / Save PDF</button>
+        <button class="bs" onclick="goTo(3)">Back to Timeline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print page 2: Flow diagram + notes -->
+  <div id="print-page2">
+    <div class="sec">
+      <h2>Installation Flow Diagram</h2>
+      <div id="fa-print" class="fa"></div>
+      <div style="margin-top:16px">
+        <h2>Installation Notes</h2>
+        <div id="notes-print" style="white-space:pre-wrap;font-size:13px;min-height:60px;border:1px solid #ddd;padding:12px;border-radius:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="mo hidden" onclick="if(event.target===this)cm()"><div class="mb" id="mc"></div></div>
+
+<script>
+// ================================================================
+// DATA
+// ================================================================
+const RO_SPECS = {
+  cleone:{flow15:'0.10 l/min (6 l/h)',flow25:'0.14 l/min (8.4 l/h)',recovery:'25% @15°C | 30% @25°C',power:'23W',inlet:'N/A'},
+  spirit:{flow15:'2.5 l/min (150 l/h)',flow25:'2.8 l/min (168 l/h)',recovery:'60% @15°C | 65% @25°C',power:'350W',inlet:'2–10 bar'},
+  pro600:{flow15:'4.5 l/min (270 l/h)',flow25:'5.4 l/min (324 l/h)',recovery:'70% @15°C | 75% @25°C',power:'720W',inlet:'2–10 bar'}
+};
+
+const CAT = {
+  prefilters:{c:'Purification',l:'Pre Filters',s:'Sediment + Carbon',fr:0},
+  cleone:{c:'Purification',l:'Cleone Classic',s:'0.10 l/min (6 l/h)',fr:0.10,ro:true},
+  spirit:{c:'Purification',l:'Spirit',s:'2.5 l/min (150 l/h)',fr:2.5,ro:true},
+  pro600:{c:'Purification',l:'PRO 600CV-HR',s:'4.5 l/min (270 l/h)',fr:4.5,ro:true},
+  yconnector:{c:'Flow Control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
+  checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
+  seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
+  rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
+  cafestation:{c:'Storage & Treatment',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
+  mineraliser:{c:'Storage & Treatment',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
+  espresso:{c:'Equipment',l:'Espresso Machine',s:'Espresso / Tea / Americano',isEq:true,et:'espresso'},
+  filter:{c:'Equipment',l:'Filter Brewer',s:'Batch brew',isEq:true,et:'filter'},
+  hotwater:{c:'Equipment',l:'Hot Water Tank',s:'300ml default draw',isEq:true,et:'hotwater'},
+  coldwater:{c:'Equipment',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
+  bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'}
+};
+
+const DRINKS=[{n:'Espresso',ml:70},{n:'Tea',ml:200},{n:'Americano',ml:150}];
+
+// ================================================================
+// STATE
+// ================================================================
+let imp=false, ic=0, nodeNum=0;
+function gid(){return'n'+(++ic)}
+let eqN={};
+let mainPath=[{id:gid(),ct:'mains',l:'Mains Water',s:'Municipal supply',fx:true},{id:gid(),ct:'select'}];
+let eqCfg={}, tl={}, focR=0, focC=0, dCh=null, tCh=null;
+
+// ================================================================
+// UNITS
+// ================================================================
+function setU(u){imp=u==='i';document.getElementById('bmet').classList.toggle('act',!imp);document.getElementById('bimp').classList.toggle('act',imp);renderFlow();renderEq();if(!document.getElementById('step-3').classList.contains('hidden'))buildTL();}
+function mlV(v){return imp?+(v/29.5735).toFixed(1):v}
+function mlU(){return imp?'fl oz':'ml'}
+function lV(v){return imp?+(v/3.78541).toFixed(2):v}
+function lU(){return imp?'gal':'L'}
+function fV(v){if(imp)return(v/29.5735).toFixed(1)+' fl oz';return v>=1000?(v/1000).toFixed(1)+'L':v+'ml'}
+
+// ================================================================
+// NAV
+// ================================================================
+function goTo(n){for(let i=1;i<=4;i++){document.getElementById('step-'+i).classList.toggle('hidden',i!==n);document.getElementById('s'+i).classList.toggle('act',i===n)}if(n===2)renderEq();if(n===3)buildTL();if(n===4)runSim()}
+
+// ================================================================
+// FLOW RENDERING
+// ================================================================
+function renderFlow(){
+  nodeNum=0;
+  document.getElementById('fa').innerHTML=rPath(mainPath,'m',false);
+  nodeNum=0;
+  document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
+}
+
+function rPath(path,pid,showNums){
+  let h='<div class="fr">';
+  for(let i=0;i<path.length;i++){
+    const nd=path[i];
+    if(i>0) h+=`<div class="fl" onclick="lnClick('${pid}',${i})"><div class="ll">click</div></div>`;
+
+    if(nd.ct==='select'){
+      h+=`<div class="fn sel" onclick="selClick('${pid}',${i})">+ Select</div>`;
+    } else if(nd.isY){
+      h+=`<div class="fi yc" onclick="fiClick('${pid}',${i})">Y</div>`;
+      // T-split: inline fork, top branch up, bottom branch down
+      h+=`<div class="yfork">`;
+      h+=`<div class="ybr"><div class="yarm"></div>${rPath(nd.br[0],pid+'-0-'+nd.id,showNums)}</div>`;
+      h+=`<div class="ybr"><div class="yarm"></div>${rPath(nd.br[1],pid+'-1-'+nd.id,showNums)}</div>`;
+      h+=`</div>`;
+    } else if(nd.isCV){
+      h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
+    } else {
+      const cls=nd.isEq?'eq':'src';
+      const sub=nd.s?`<div class="ns">${nd.s}</div>`:'';
+      const num=showNums&&nd.ct!=='select'?`<div class="nnum">${++nodeNum}</div>`:'';
+      h+=`<div class="fn ${cls}" onclick="ndClick('${pid}',${i})">${num}${nd.l}${sub}</div>`;
+    }
+  }
+  h+='</div>';
+  return h;
+}
+
+function resP(pid){
+  if(pid==='m') return mainPath;
+  const pts=pid.split('-');
+  let p=mainPath;
+  let i=1;
+  while(i<pts.length){
+    if(pts[i]==='0'||pts[i]==='1'){
+      const bi=parseInt(pts[i]);
+      const nid=pts[i+1];
+      const yn=p.find(n=>n.id===nid);
+      if(yn&&yn.br) p=yn.br[bi];
+      i+=2;
+    } else i++;
+  }
+  return p;
+}
+
+// ================================================================
+// FLOW INTERACTIONS
+// ================================================================
+function sm(h){document.getElementById('mc').innerHTML=h;document.getElementById('modal').classList.remove('hidden')}
+function cm(){document.getElementById('modal').classList.add('hidden')}
+
+function selClick(pid,idx){
+  let h='<h3>Add Component</h3>';
+  let lc='';
+  for(const k in CAT){
+    const c=CAT[k];
+    if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
+    if(c.isRT) h+=`<div class="mbt" onclick="addRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else h+=`<div class="mbt" onclick="addN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+  }
+  h+='<div style="margin-top:12px"><button class="bs bsm" style="width:100%" onclick="cm()">Cancel</button></div>';
+  sm(h);
+}
+
+function lnClick(pid,idx){
+  let h='<h3>Insert Component</h3>';
+  let lc='';
+  for(const k in CAT){
+    const c=CAT[k];
+    if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
+    if(c.isRT) h+=`<div class="mbt" onclick="insRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else h+=`<div class="mbt" onclick="insN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+  }
+  h+='<div style="margin-top:12px"><button class="bs bsm" style="width:100%" onclick="cm()">Cancel</button></div>';
+  sm(h);
+}
+
+function addN(pid,idx,key){
+  const p=resP(pid);const c=CAT[key];const nd=mkNd(key,c);
+  if(c.isY){
+    // Carry non-fixed/non-RO nodes before the Select into top branch
+    let carryNodes=[];
+    let carryStart=idx;
+    for(let j=idx-1;j>=0;j--){
+      const prev=p[j];
+      if(prev.fx||prev.ct==='mains'||prev.ro) break;
+      carryNodes.unshift(prev);
+      carryStart=j;
+    }
+    // Remove carried nodes from path
+    if(carryNodes.length) p.splice(carryStart, carryNodes.length);
+    // Recalculate idx after removal
+    const newIdx=carryStart;
+    // Put carried nodes into top branch + select
+    nd.br[0]=[...carryNodes,{id:gid(),ct:'select'}];
+    p.splice(newIdx,1,nd); // replace select with Y
+    ensSel(p);
+  } else {
+    p.splice(idx,0,nd);ensSel(p);
+  }
+  renderFlow();cm();
+}
+function insN(pid,idx,key){
+  const p=resP(pid);const c=CAT[key];const nd=mkNd(key,c);
+  if(c.isY){
+    // Carry nodes after insert point into top branch
+    const after=p.splice(idx);
+    nd.br[0]=[...after.filter(n=>n.ct!=='select'),{id:gid(),ct:'select'}];
+    p.push(nd);
+    ensSel(p);
+  } else {
+    p.splice(idx,0,nd);ensSel(p);
+  }
+  renderFlow();cm();
+}
+
+function addRT(pid,idx){sm(`<h3>RO Tank Volume</h3><p>Nominal volume (liters). Usable = 50%.</p><div style="margin-bottom:12px"><input type="number" id="rtv" value="12" min="1" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insRT(pid,idx){sm(`<h3>RO Tank Volume</h3><p>Nominal volume (liters). Usable = 50%.</p><div style="margin-bottom:12px"><input type="number" id="rtv" value="12" min="1" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+
+function doRT(pid,idx){
+  const v=parseFloat(document.getElementById('rtv').value)||12;
+  const p=resP(pid);
+  p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+v+'L)',s:(v*0.5).toFixed(1)+'L usable',vol:v,isEq:false,isCV:false,isY:false});
+  ensSel(p);renderFlow();cm();
+}
+
+function mkNd(key,c){
+  const nd={id:gid(),ct:key,l:c.l,s:c.s,isEq:!!c.isEq,isCV:!!c.isCV,isY:!!c.isY,fr:c.fr||0,ro:!!c.ro};
+  if(c.isY){nd.br=[[{id:gid(),ct:'select'}],[{id:gid(),ct:'select'}]]}
+  if(c.isEq){
+    if(!eqN[c.et])eqN[c.et]=0;eqN[c.et]++;
+    const n=eqN[c.et];
+    nd.l=c.l+' '+n;nd.et=c.et;
+    if(c.et==='espresso') eqCfg[nd.id]={t:'espresso',drinks:JSON.parse(JSON.stringify(DRINKS)),dt:'Espresso'};
+    else if(c.et==='filter') eqCfg[nd.id]={t:'filter',vol:4500,mins:5};
+    else if(c.et==='hotwater') eqCfg[nd.id]={t:'hotwater',vol:300};
+    else if(c.et==='coldwater') eqCfg[nd.id]={t:'coldwater',vol:500};
+    else if(c.et==='bottles') eqCfg[nd.id]={t:'bottles',vol:330};
+    tl[nd.id]={};
+  }
+  return nd;
+}
+
+function ensSel(p){if(!p.length||p[p.length-1].ct!=='select')p.push({id:gid(),ct:'select'})}
+
+function ndClick(pid,idx){
+  const p=resP(pid);const nd=p[idx];
+  if(nd.fx)return;
+  let h=`<h3>${nd.l}</h3>`;
+  if(nd.ro && RO_SPECS[nd.ct]){
+    const sp=RO_SPECS[nd.ct];
+    h+=`<div class="specline"><strong>Flow @15°C:</strong> ${sp.flow15}</div>`;
+    h+=`<div class="specline"><strong>Flow @25°C:</strong> ${sp.flow25}</div>`;
+    h+=`<div class="specline"><strong>Recovery:</strong> ${sp.recovery}</div>`;
+    h+=`<div class="specline"><strong>Power:</strong> ${sp.power}</div>`;
+    h+=`<div class="specline"><strong>Inlet pressure:</strong> ${sp.inlet}</div>`;
+  } else {
+    h+=`<p>${nd.s||''}</p>`;
+  }
+  h+=`<div class="ma" style="margin-top:16px"><button class="bd" onclick="rmNd('${pid}',${idx})">Remove</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`;
+  sm(h);
+}
+
+function fiClick(pid,idx){
+  const p=resP(pid);const nd=p[idx];
+  sm(`<h3>${nd.isCV?'Checkvalve':'Y-Connector'}</h3><div class="ma"><button class="bd" onclick="rmNd('${pid}',${idx})">Remove</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`);
+}
+
+function rmNd(pid,idx){
+  const p=resP(pid);const nd=p[idx];
+  if(nd.isEq){delete eqCfg[nd.id];delete tl[nd.id]}
+  if(nd.isY&&nd.br)nd.br.forEach(b=>clnBr(b));
+  p.splice(idx,1);ensSel(p);renderFlow();cm();
+}
+
+function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}if(n.isY&&n.br)n.br.forEach(b=>clnBr(b))})}
+
+// ================================================================
+// COLLECT
+// ================================================================
+function colEq(p){let e=[];p.forEach(n=>{if(n.isEq)e.push(n);if(n.isY&&n.br)n.br.forEach(b=>{e=e.concat(colEq(b))})});return e}
+function colRO(p){let r=null;p.forEach(n=>{if(n.ro)r=n;if(n.isY&&n.br)n.br.forEach(b=>{const x=colRO(b);if(x)r=x})});return r}
+function colRT(p){let t=[];p.forEach(n=>{if(n.ct==='rotank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colRT(b))})});return t}
+function hasCS(p){let f=false;p.forEach(n=>{if(n.ct==='cafestation')f=true;if(n.isY&&n.br)n.br.forEach(b=>{if(hasCS(b))f=true})});return f}
+
+// ================================================================
+// STEP 2
+// ================================================================
+function renderEq(){
+  const eqs=colEq(mainPath);const el=document.getElementById('eql');const em=document.getElementById('eqe');
+  if(!eqs.length){el.innerHTML='';em.classList.remove('hidden');return}
+  em.classList.add('hidden');
+  el.innerHTML=eqs.map(eq=>{
+    const c=eqCfg[eq.id];if(!c)return'';
+    let d='',x='';
+    if(c.t==='espresso'){
+      d='Configure drink volumes:';
+      x='<div class="dt">'+c.drinks.map((dk,i)=>`<div class="db"><label>${dk.n}</label><input type="number" value="${imp?mlV(dk.ml):dk.ml}" onfocus="this.select()" onchange="uDk('${eq.id}',${i},this.value)"> ${mlU()}</div>`).join('')+'</div>';
+    } else if(c.t==='filter'){
+      d=`<div style="display:flex;gap:12px;margin-top:6px"><div><label>Presumed brew volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uFlt('${eq.id}','v',this.value)"></div><div><label>Minutes of flow</label><input type="number" value="${c.mins}" style="width:80px" onfocus="this.select()" onchange="uFlt('${eq.id}','m',this.value)"></div></div>`;
+    } else if(c.t==='hotwater'){
+      d=`<div style="margin-top:6px"><label>Presumed draw volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"></div>`;
+    } else if(c.t==='coldwater'){
+      d=`<div style="margin-top:6px"><label>Presumed volume per pour (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"><div class="note">Max 500ml, 30s between pours</div></div>`;
+    } else if(c.t==='bottles'){
+      d=`<div style="margin-top:6px"><label>Presumed bottle volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"></div>`;
+    }
+    return `<div class="eqi"><div class="eqt"><span class="en">${eq.l}</span></div>${d}${x}</div>`;
+  }).join('');
+}
+
+function uDk(id,i,v){const val=imp?Math.round(parseFloat(v)*29.5735):parseInt(v);if(eqCfg[id]&&eqCfg[id].drinks)eqCfg[id].drinks[i].ml=val||0}
+function uFlt(id,f,v){if(!eqCfg[id])return;if(f==='v')eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0;if(f==='m')eqCfg[id].mins=parseInt(v)||1}
+function uVol(id,v){if(!eqCfg[id])return;eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0}
+
+// ================================================================
+// STEP 3: TIMELINE
+// ================================================================
+// Build rows: espresso → header + sub-rows per drink; others → single row
+function getTLRows(){
+  const eqs=colEq(mainPath);let rows=[];
+  eqs.forEach(eq=>{
+    const c=eqCfg[eq.id];if(!c)return;
+    if(c.t==='espresso'){
+      rows.push({type:'header',label:eq.l,id:eq.id});
+      c.drinks.forEach(dk=>{
+        const key=eq.id+'_'+dk.n;
+        if(!tl[key])tl[key]={};
+        rows.push({type:'drink',label:'  '+dk.n+' ('+dk.ml+(imp?' '+mlU():'ml')+')',id:key,ml:dk.ml,eqId:eq.id,drink:dk.n});
+      });
+    } else {
+      rows.push({type:'eq',label:eq.l,id:eq.id,ml:c.vol,eqId:eq.id});
+    }
+  });
+  return rows;
+}
+
+function buildTL(){
+  const rows=getTLRows();
+  const t=document.getElementById('tlt');
+  if(!rows.length){t.innerHTML='<tr><td style="padding:20px;color:#999">No equipment. Go to Step 1.</td></tr>';document.getElementById('tls').innerHTML='';return}
+
+  let h='<tr><th class="eh">Equipment</th>';
+  for(let m=0;m<60;m++)h+=`<th>${m}</th>`;
+  h+='</tr>';
+
+  let ri=0;
+  rows.forEach((r,rowIdx)=>{
+    if(r.type==='header'){
+      h+=`<tr><td class="ehead" colspan="1">${r.label}</td>`;
+      for(let m=0;m<60;m++)h+='<td class="eheadcell"></td>';
+      h+='</tr>';
+    } else {
+      h+=`<tr><td class="el">${r.label}</td>`;
+      for(let m=0;m<60;m++){
+        const v=tl[r.id]?.[m];
+        const act=v&&v>0;
+        const fc=focR===rowIdx&&focC===m?' foc':'';
+        h+=`<td class="c${act?' a':''}${fc}" data-r="${rowIdx}" data-c="${m}" onclick="cClk(${rowIdx},${m})" oncontextmenu="event.preventDefault();cRt(${rowIdx},${m})" tabindex="-1">${act?v:''}</td>`;
+      }
+      h+='</tr>';
+      ri++;
+    }
+  });
+
+  // Total row
+  h+='<tr class="totr"><td class="el"><strong>Total ('+mlU()+')</strong></td>';
+  for(let m=0;m<60;m++){
+    let tot=gMT(m);
+    h+=`<td>${tot>0?(imp?mlV(tot):tot):''}</td>`;
+  }
+  h+='</tr>';
+  t.innerHTML=h;
+  uSum();
+}
+
+function gMT(m){
+  const rows=getTLRows();let t=0;
+  rows.forEach(r=>{if(r.type!=='header'){const v=tl[r.id]?.[m];if(v&&v>0)t+=v*r.ml}});
+  return t;
+}
+
+function cClk(ri,m){
+  const rows=getTLRows();const r=rows[ri];
+  if(!r||r.type==='header')return;
+  focR=ri;focC=m;
+  if(!tl[r.id])tl[r.id]={};
+  tl[r.id][m]=(tl[r.id][m]||0)+1;
+  buildTL();focusCell();
+}
+
+function cRt(ri,m){
+  const rows=getTLRows();const r=rows[ri];
+  if(!r||r.type==='header')return;
+  if(tl[r.id]?.[m]){tl[r.id][m]--;if(tl[r.id][m]<=0)delete tl[r.id][m]}
+  buildTL();
+}
+
+function focusCell(){
+  const cell=document.querySelector(`td[data-r="${focR}"][data-c="${focC}"]`);
+  if(cell)cell.focus();
+}
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('step-3')||document.getElementById('step-3').classList.contains('hidden'))return;
+  const rows=getTLRows();
+  const isCell=document.activeElement&&document.activeElement.tagName==='TD'&&document.activeElement.classList.contains('c');
+
+  if(e.key==='ArrowRight'){e.preventDefault();focC=Math.min(59,focC+1);buildTL();focusCell()}
+  else if(e.key==='ArrowLeft'){e.preventDefault();focC=Math.max(0,focC-1);buildTL();focusCell()}
+  else if(e.key==='ArrowDown'){
+    e.preventDefault();
+    let nr=focR+1;while(nr<rows.length&&rows[nr].type==='header')nr++;
+    if(nr<rows.length)focR=nr;
+    buildTL();focusCell();
+  }
+  else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    let nr=focR-1;while(nr>=0&&rows[nr].type==='header')nr--;
+    if(nr>=0)focR=nr;
+    buildTL();focusCell();
+  }
+  else if(e.key==='Delete'||e.key==='Backspace'){
+    if(isCell){e.preventDefault();const r=rows[focR];if(r&&r.type!=='header')delete tl[r.id]?.[focC];buildTL();focusCell()}
+  }
+  else if(e.key>='0'&&e.key<='9'){
+    if(isCell){e.preventDefault();const r=rows[focR];if(r&&r.type!=='header'){if(!tl[r.id])tl[r.id]={};tl[r.id][focC]=parseInt(e.key);buildTL();focusCell()}}
+  }
+});
+
+function uSum(){
+  const eqs=colEq(mainPath);const el=document.getElementById('tls');
+  if(!eqs.length){el.innerHTML='';return}
+  let tAll=0;
+  let items=eqs.map(eq=>{
+    const c=eqCfg[eq.id];if(!c)return'';
+    let t=0;
+    if(c.t==='espresso'){
+      c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;for(let m=0;m<60;m++){const v=tl[key]?.[m];if(v)t+=v*dk.ml}});
+    } else {
+      for(let m=0;m<60;m++){const v=tl[eq.id]?.[m];if(v)t+=v*c.vol}
+    }
+    tAll+=t;
+    return `<div class="si"><span class="sin">${eq.l}</span><span class="siv">${imp?mlV(t)+' '+mlU():fV(t)}</span></div>`;
+  }).filter(Boolean);
+  const td=imp?mlV(tAll)+' '+mlU():fV(tAll);
+  el.innerHTML=`<h3>Demand Summary</h3><div class="sg">${items.join('')}<div class="si" style="background:var(--bwl)"><span class="sin">TOTAL</span><span class="siv">${td}</span></div></div>`;
+}
+
+// Presets
+function fillR(){
+  clrTL();
+  colEq(mainPath).forEach(eq=>{
+    const c=eqCfg[eq.id];if(!c)return;
+    if(c.t==='espresso'){
+      const dk=c.drinks[0];const key=eq.id+'_'+dk.n;
+      [0,1,2,3,5,7,8,10,12,14,15,17,19,20,22,24,25,27,28,30,32,33,35,37,38,40,42,44,45,47,48,50,52,54,55,57,58].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
+      [0,5,10,15,20,25,30,35,40,45,50,55].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
+    } else if(c.t==='filter'){
+      [0,15,30,45].forEach(s=>{for(let i=0;i<c.mins&&(s+i)<60;i++)tl[eq.id][s+i]=(tl[eq.id][s+i]||0)+1});
+    } else if(c.t==='coldwater'){
+      [2,5,8,12,18,22,28,32,38,42,48,52,58].forEach(m=>{tl[eq.id][m]=1});
+    } else if(c.t==='bottles'){
+      [3,7,11,16,21,26,31,36,41,46,51,56].forEach(m=>{tl[eq.id][m]=1});
+    } else if(c.t==='hotwater'){
+      [0,20,40].forEach(m=>{tl[eq.id][m]=1});
+    }
+  });
+  buildTL();
+}
+
+function fillS(){
+  clrTL();
+  colEq(mainPath).forEach(eq=>{
+    const c=eqCfg[eq.id];if(!c)return;
+    if(c.t==='espresso'){
+      const dk=c.drinks[0];const key=eq.id+'_'+dk.n;
+      for(let m=0;m<60;m+=3)tl[key][m]=1;
+    } else if(c.t==='filter'){
+      [0,20,40].forEach(s=>{for(let i=0;i<c.mins&&(s+i)<60;i++)tl[eq.id][s+i]=1});
+    } else if(c.t==='coldwater'){
+      for(let m=2;m<60;m+=5)tl[eq.id][m]=1;
+    } else if(c.t==='bottles'){
+      for(let m=4;m<60;m+=8)tl[eq.id][m]=1;
+    } else if(c.t==='hotwater'){
+      [0,30].forEach(m=>{tl[eq.id][m]=1});
+    }
+  });
+  buildTL();
+}
+
+function clrTL(){
+  for(const k in tl)tl[k]={};
+  // Also clear espresso drink keys
+  colEq(mainPath).forEach(eq=>{
+    const c=eqCfg[eq.id];if(!c)return;
+    if(c.t==='espresso') c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;tl[key]={}});
+    else tl[eq.id]={};
+  });
+  buildTL();
+}
+
+// ================================================================
+// STEP 4: SIMULATION
+// ================================================================
+function runSim(){
+  // Update print content
+  document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
+  nodeNum=0;
+  document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
+
+  const ro=colRO(mainPath);
+  const ppm=ro?ro.fr:0;
+  const tanks=colRT(mainPath);
+  const cafe=hasCS(mainPath);
+  const rtUsable=tanks.reduce((s,t)=>s+(t.vol||0)*0.5,0);
+
+  // Cafe Station: 10L, trigger at 2L, refills at RO rate
+  let cafeLvl=cafe?10:0;
+  let cafeRefilling=false;
+
+  // RO Tank: usable vol, trigger at 50% of usable, refills at RO rate
+  let roLvl=rtUsable;
+  let roRefilling=false;
+  const roTrigger=rtUsable*0.5;
+
+  const mins=[],demD=[],prodD=[],roD=[],cafeD=[];
+  let totalDem=0,defMin=0;
+
+  for(let m=0;m<60;m++){
+    mins.push(m);
+    let dem=gMT(m)/1000; // liters
+
+    // Draw from Cafe Station
+    if(cafe && dem>0){
+      cafeLvl-=dem;
+      if(cafeLvl<0){defMin++;cafeLvl=0}
+    }
+
+    // Draw from RO Tank (for equipment not on cafe station — simplified: if no cafe, draw from RO tank)
+    if(!cafe && rtUsable>0 && dem>0){
+      roLvl-=dem;
+      if(roLvl<0){defMin++;roLvl=0}
+    }
+
+    // Cafe Station refill logic
+    if(cafe){
+      if(cafeLvl<=2) cafeRefilling=true;
+      if(cafeLvl>=10) cafeRefilling=false;
+      if(cafeRefilling){
+        cafeLvl+=ppm; // refill at RO rate per minute
+        if(cafeLvl>10) cafeLvl=10;
+      }
+    }
+
+    // RO Tank refill logic
+    if(rtUsable>0){
+      if(roLvl<=roTrigger) roRefilling=true;
+      if(roLvl>=rtUsable) roRefilling=false;
+      if(roRefilling){
+        roLvl+=ppm;
+        if(roLvl>rtUsable) roLvl=rtUsable;
+      }
+    }
+
+    demD.push(dem*1000);
+    prodD.push(ppm*1000);
+    roD.push(roLvl);
+    cafeD.push(cafeLvl);
+    totalDem+=dem;
+  }
+
+  const totalProd=ppm*60;
+  const ratio=totalDem>0?(totalProd/totalDem*100):100;
+  const st=defMin===0?'ok':defMin<=5?'wa':'cr';
+  const vU=imp?'gal':'L';
+  const tdD=imp?lV(totalDem):totalDem.toFixed(1);
+
+  document.getElementById('rsum').innerHTML=
+    `<div class="rc ${st}"><div class="rv">${defMin}</div><div class="rl">Minutes with water deficit</div></div>`+
+    `<div class="rc ${ratio>120?'ok':ratio>80?'wa':'cr'}"><div class="rv">${ratio.toFixed(0)}%</div><div class="rl">Production / Demand ratio</div></div>`+
+    `<div class="rc ok"><div class="rv">${tdD} ${vU}</div><div class="rl">Total demand in 1 hour</div></div>`;
+
+  const yU=imp?'fl oz':'ml';
+  const dd=imp?demD.map(v=>+(v/29.5735).toFixed(1)):demD;
+  const pd=imp?prodD.map(v=>+(v/29.5735).toFixed(1)):prodD;
+
+  if(dCh)dCh.destroy();
+  dCh=new Chart(document.getElementById('dc').getContext('2d'),{
+    type:'line',data:{labels:mins.map(String),datasets:[
+      {label:'Demand ('+yU+'/min)',data:dd,borderColor:'#D32F2F',backgroundColor:'rgba(211,47,47,.1)',fill:true,tension:.3,borderWidth:2,pointRadius:1},
+      {label:'Production ('+yU+'/min)',data:pd,borderColor:'#4A6AF5',backgroundColor:'rgba(74,106,245,.08)',fill:true,tension:0,borderWidth:2,borderDash:[6,3],pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},
+      plugins:{title:{display:true,text:'Demand vs Production',font:{size:14}},legend:{position:'top'}},
+      scales:{x:{title:{display:true,text:'Minute'}},y:{title:{display:true,text:yU},beginAtZero:true}}}
+  });
+
+  if(tCh)tCh.destroy();
+  const tU=imp?'gal':'L';
+  const ds=[];
+  if(cafe)ds.push({label:'Cafe Station ('+tU+')',data:imp?cafeD.map(v=>lV(v)):cafeD,borderColor:'#4A6AF5',backgroundColor:'rgba(74,106,245,.15)',fill:true,tension:.3,borderWidth:2});
+  if(rtUsable>0)ds.push({label:'RO Tank ('+tU+')',data:imp?roD.map(v=>lV(v)):roD,borderColor:'#888',backgroundColor:'rgba(100,100,100,.1)',fill:true,tension:.3,borderWidth:2});
+
+  tCh=new Chart(document.getElementById('tc').getContext('2d'),{
+    type:'line',data:{labels:mins.map(String),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{title:{display:true,text:'Tank Levels',font:{size:14}},legend:{position:'top'}},
+      scales:{x:{title:{display:true,text:'Minute'}},y:{title:{display:true,text:tU},beginAtZero:true}}}
+  });
+}
+
+// INIT
+renderFlow();
+</script>
+</body>
+</html>
