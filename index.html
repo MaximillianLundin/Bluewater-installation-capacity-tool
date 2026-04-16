@@ -312,6 +312,9 @@ function rPath(path,pid,showNums){
   let h='<div class="fr">';
   for(let i=0;i<path.length;i++){
     const nd=path[i];
+    const prevIsY=i>0&&path[i-1].isY;
+    // Skip the trailing select (and its connector) that appears after a Y-node — it floats in empty space
+    if(nd.ct==='select'&&prevIsY) continue;
     if(i>0) h+=`<div class="fl" onclick="lnClick('${pid}',${i})"><div class="ll">click</div></div>`;
 
     if(nd.ct==='select'){
