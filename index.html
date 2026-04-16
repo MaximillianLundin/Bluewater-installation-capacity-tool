@@ -291,7 +291,17 @@ function goTo(n){for(let i=1;i<=4;i++){document.getElementById('step-'+i).classL
 // ================================================================
 // FLOW RENDERING
 // ================================================================
+function renumberEq(){
+  const counts={};
+  colEq(mainPath).forEach(nd=>{
+    if(!nd.et)return;
+    counts[nd.et]=(counts[nd.et]||0)+1;
+    const base=CAT[nd.et]?CAT[nd.et].l:nd.et;
+    nd.l=base+' '+counts[nd.et];
+  });
+}
 function renderFlow(){
+  renumberEq();
   nodeNum=0;
   document.getElementById('fa').innerHTML=rPath(mainPath,'m',false);
   nodeNum=0;
