@@ -122,7 +122,6 @@ table.tl{border-collapse:collapse;min-width:100%}
 
 @media print{
   @page{size:A4 portrait;margin:15mm}
-  @page landscape{size:A4 landscape;margin:10mm}
   header{position:static;border-bottom:2px solid var(--bw)}
   .snav,.bs,.bp,.bd,.bsm,.utog,button{display:none!important}
   body{background:#fff;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -132,7 +131,8 @@ table.tl{border-collapse:collapse;min-width:100%}
   #step-4{display:block!important}
   #step-1,#step-2,#step-3{display:none!important}
   /* Page 2: Flow + Notes */
-  #print-page2{display:block!important;page-break-before:always;page:landscape}
+  #print-page2{display:block!important;page-break-before:always}
+  #print-page2 .fa{zoom:0.55;transform-origin:top left}
   .fn.sel{display:none}
   .fl .ll{display:none}
   .fn .nnum{display:flex}
@@ -142,7 +142,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   .fn.eq{border-color:#666!important}
 }
 
-#print-page2{display:none;page:landscape}
+#print-page2{display:none}
 .fn .nnum{display:none}
 </style>
 </head>
@@ -207,9 +207,9 @@ table.tl{border-collapse:collapse;min-width:100%}
     <div class="sec">
       <h2>Water Demand vs Production Analysis</h2>
       <div id="rsum" class="rs"></div>
-      <div id="parts-list" style="margin-top:20px"></div>
       <div class="cc"><canvas id="dc"></canvas></div>
       <div class="cc" style="height:280px;margin-top:20px"><canvas id="tc"></canvas></div>
+      <div id="parts-list" style="margin-top:20px"></div>
       <div style="margin-top:20px;display:flex;gap:12px">
         <button class="bp" onclick="window.print()">Print / Save PDF</button>
         <button class="bs" onclick="goTo(3)">Back to Timeline</button>
@@ -496,7 +496,7 @@ function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}
 // ================================================================
 function colEq(p){let e=[];p.forEach(n=>{if(n.isEq)e.push(n);if(n.isY&&n.br)n.br.forEach(b=>{e=e.concat(colEq(b))})});return e}
 function colRO(p){let r=null;p.forEach(n=>{if(n.ro)r=n;if(n.isY&&n.br)n.br.forEach(b=>{const x=colRO(b);if(x)r=x})});return r}
-function colAllNodes(p){let t=[];p.forEach(n=>{if(n.ct!=='select'&&!n.isY&&!n.isCV&&n.ct!=='mains')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colAllNodes(b))})});return t}
+function colAllNodes(p){let t=[];p.forEach(n=>{if(n.ct!=='select'&&!n.isY&&n.ct!=='mains')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colAllNodes(b))})});return t}
 function buildPartsList(){
   const nodes=colAllNodes(mainPath);
   if(!nodes.length){document.getElementById('parts-list').innerHTML='';return}
