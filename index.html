@@ -242,12 +242,13 @@ const RO_SPECS = {
   spirit:{flow15:'2.5 l/min (150 l/h)',flow25:'2.8 l/min (168 l/h)',recovery:'60% @15°C | 65% @25°C',power:'350W',inlet:'2–10 bar'},
   pro600:{flow15:'4.5 l/min (270 l/h)',flow25:'5.4 l/min (324 l/h)',recovery:'70% @15°C | 75% @25°C',power:'720W',inlet:'2–10 bar'}
 };
+// Simulation always assumes 15°C inlet, optimal pressure (2–10 bar). Flow rates use @15°C values.
 
 const CAT = {
   prefilters:{c:'Purification',l:'Pre Filters',s:'Sediment + Carbon',fr:0},
-  cleone:{c:'Purification',l:'Cleone Classic',s:'0.10 l/min (6 l/h)',fr:0.10,ro:true},
-  spirit:{c:'Purification',l:'Spirit',s:'2.5 l/min (150 l/h)',fr:2.5,ro:true},
-  pro600:{c:'Purification',l:'PRO 600CV-HR',s:'4.5 l/min (270 l/h)',fr:4.5,ro:true},
+  cleone:{c:'Purification',l:'Bluewater Cleone',s:'0.10 l/min (6 l/h) @15°C',fr:0.10,ro:true},
+  spirit:{c:'Purification',l:'Bluewater Spirit',s:'2.5 l/min (150 l/h) @15°C',fr:2.5,ro:true},
+  pro600:{c:'Purification',l:'Bluewater PRO',s:'4.5 l/min (270 l/h) @15°C',fr:4.5,ro:true},
   yconnector:{c:'Flow Control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
   seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
@@ -443,8 +444,8 @@ function doRT(pid,idx){
   p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+vol+'L)',s:stored.toFixed(1)+'L lagrat / '+usable.toFixed(1)+'L användbart',vol:vol,precharge:pc,volStored:stored,volUsable:usable,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
-function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar Spirit vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
-function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar Spirit vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar RO-maskinen vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar RO-maskinen vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 function doWT(pid,idx){
   const vol=parseFloat(document.getElementById('wtv').value)||10;
   const trigger=+(vol*0.20).toFixed(1);
@@ -813,7 +814,7 @@ function runSim(){
   const wtEqIds=eqIdsDownstreamOf(mainPath,'watertank');
 
   const mins=[],demD=[],prodD=[],roD=[],cafeD=[],wtD=[];
-  let totalDem=0,defMin=0;
+  let totalDem=0,defMin=0,overloadMins=0;
 
   for(let m=0;m<60;m++){
     mins.push(m);
@@ -842,43 +843,27 @@ function runSim(){
       if(wtLvl<0){defMin++;wtLvl=0}
     }
 
-    // Cafe Station refill logic
+    // --- Refill triggers (update flags based on levels) ---
     if(cafe){
       if(cafeLvl<=2) cafeRefilling=true;
       if(cafeLvl>=10) cafeRefilling=false;
-      if(cafeRefilling){
-        cafeLvl+=ppm;
-        if(cafeLvl>10) cafeLvl=10;
-      }
     }
-
-    // RO Tank refill logic
     if(rtUsable>0){
       if(roLvl<=roTrigger) roRefilling=true;
       if(roLvl>=rtUsable) roRefilling=false;
-      if(roRefilling){
-        roLvl+=ppm;
-        if(roLvl>rtUsable) roLvl=rtUsable;
-      }
     }
-
-    // Water Tank w float switch refill logic
     if(wtTotalVol>0){
       if(wtLvl<=wtTriggerLvl) wtRefilling=true;
       if(wtLvl>=wtStopLvl) wtRefilling=false;
-      if(wtRefilling){
-        wtLvl+=ppm;
-        if(wtLvl>wtStopLvl) wtLvl=wtStopLvl;
-      }
     }
 
-    // Filter Brewer batch logic
+    // Filter Brewer batch logic (determines filterRefilling flag)
     let filterRefilling=false;
     let filterDem=0;
     filterStates.forEach(fs=>{
       if(fs.refilling){
         filterRefilling=true;
-        filterDem+=fs.vol; // demanding water this minute to fill brewer
+        filterDem+=fs.vol;
         fs.minsLeft--;
         if(fs.minsLeft<=0){fs.refilling=false;fs.consumed=0}
       }
@@ -891,8 +876,18 @@ function runSim(){
       }
     });
 
+    // --- Spirit capacity: distribute ppm among all simultaneous refill demands ---
+    const spiritDemanders=(cafe&&cafeRefilling?1:0)+(rtUsable>0&&roRefilling?1:0)+(wtTotalVol>0&&wtRefilling?1:0)+(filterRefilling?1:0);
+    const spiritShare=spiritDemanders>0?ppm/spiritDemanders:0;
+    if(spiritDemanders>1) overloadMins++;
+
+    if(cafe&&cafeRefilling){cafeLvl+=spiritShare;if(cafeLvl>10)cafeLvl=10;}
+    if(rtUsable>0&&roRefilling){roLvl+=spiritShare;if(roLvl>rtUsable)roLvl=rtUsable;}
+    if(wtTotalVol>0&&wtRefilling){wtLvl+=spiritShare;if(wtLvl>wtStopLvl)wtLvl=wtStopLvl;}
+
+    const spiritProduction=spiritDemanders>0?ppm:0;
     demD.push((dem+filterDem)*1000);
-    prodD.push((cafeRefilling||roRefilling||wtRefilling||filterRefilling)?ppm*1000:0);
+    prodD.push(spiritProduction*1000);
     roD.push(roLvl);
     cafeD.push(cafeLvl);
     wtD.push(wtLvl);
@@ -905,9 +900,11 @@ function runSim(){
   const vU=imp?'gal':'L';
   const tdD=imp?lV(totalDem):totalDem.toFixed(1);
 
+  const olSt=overloadMins===0?'ok':overloadMins<=5?'wa':'cr';
   document.getElementById('rsum').innerHTML=
     `<div class="rc ${st}"><div class="rv">${defMin}</div><div class="rl">Minutes with water deficit</div></div>`+
     `<div class="rc ${ratio>120?'ok':ratio>80?'wa':'cr'}"><div class="rv">${ratio.toFixed(0)}%</div><div class="rl">Production / Demand ratio</div></div>`+
+    `<div class="rc ${olSt}"><div class="rv">${overloadMins}</div><div class="rl">Minutes RO capacity split (simultaneous refill)</div></div>`+
     `<div class="rc ok"><div class="rv">${tdD} ${vU}</div><div class="rl">Total demand in 1 hour</div></div>`;
 
   const yU=imp?'fl oz':'ml';
