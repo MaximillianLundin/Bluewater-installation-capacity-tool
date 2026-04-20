@@ -526,6 +526,19 @@ function buildPartsList(){
 function colRT(p){let t=[];p.forEach(n=>{if(n.ct==='rotank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colRT(b))})});return t}
 function colWT(p){let t=[];p.forEach(n=>{if(n.ct==='watertank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colWT(b))})});return t}
 function hasCS(p){let f=false;p.forEach(n=>{if(n.ct==='cafestation')f=true;if(n.isY&&n.br)n.br.forEach(b=>{if(hasCS(b))f=true})});return f}
+// Returns equipment node IDs that are downstream of a node with ct=targetCt in the tree
+function eqIdsDownstreamOf(path,targetCt){
+  let found=false;let ids=[];
+  for(const n of path){
+    if(n.ct===targetCt){found=true;continue;}
+    if(found&&n.isEq)ids.push(n.id);
+    if(n.isY&&n.br){
+      if(found){n.br.forEach(b=>{ids=ids.concat(colEq(b).map(e=>e.id))});}
+      else{n.br.forEach(b=>{ids=ids.concat(eqIdsDownstreamOf(b,targetCt));});}
+    }
+  }
+  return ids;
+}
 
 // ================================================================
 // STEP 2
@@ -621,9 +634,9 @@ function buildTL(){
   uSum();
 }
 
-function gMT(m){
+function gMT(m,eqIds=null){
   const rows=getTLRows();let t=0;
-  rows.forEach(r=>{if(r.type!=='header'&&!r.noGMT){const v=tl[r.id]?.[m];if(v&&v>0)t+=v*r.ml}});
+  rows.forEach(r=>{if(r.type!=='header'&&!r.noGMT){if(eqIds===null||eqIds.includes(r.eqId)){const v=tl[r.id]?.[m];if(v&&v>0)t+=v*r.ml}}});
   return t;
 }
 
@@ -794,29 +807,39 @@ function runSim(){
     return {id:e.id,vol,cups,consumed:0,refilling:false,minsLeft:0};
   });
 
+  // Pre-compute which equipment draws from which tank source
+  const cafeEqIds=eqIdsDownstreamOf(mainPath,'cafestation');
+  const roEqIds=eqIdsDownstreamOf(mainPath,'rotank');
+  const wtEqIds=eqIdsDownstreamOf(mainPath,'watertank');
+
   const mins=[],demD=[],prodD=[],roD=[],cafeD=[],wtD=[];
   let totalDem=0,defMin=0;
 
   for(let m=0;m<60;m++){
     mins.push(m);
-    let dem=gMT(m)/1000; // liters
+    let dem=gMT(m)/1000; // total demand for charts
+
+    // Per-source demand
+    const cafeDem=cafeEqIds.length>0?gMT(m,cafeEqIds)/1000:(cafe&&roEqIds.length===0&&wtEqIds.length===0?dem:0);
+    const roDem=roEqIds.length>0?gMT(m,roEqIds)/1000:(!cafe&&rtUsable>0&&wtTotalVol===0&&cafeEqIds.length===0?dem:0);
+    const wtDem=wtEqIds.length>0?gMT(m,wtEqIds)/1000:(!cafe&&wtTotalVol>0&&rtUsable===0&&cafeEqIds.length===0?dem:0);
 
     // Draw from Cafe Station
-    if(cafe && dem>0){
-      cafeLvl-=dem;
+    if(cafe&&cafeDem>0){
+      cafeLvl-=cafeDem;
       if(cafeLvl<0){defMin++;cafeLvl=0}
     }
 
-    // Draw from Water Tank w float switch (if present and no cafe station)
-    if(!cafe && wtTotalVol>0 && rtUsable===0 && dem>0){
-      wtLvl-=dem;
-      if(wtLvl<0){defMin++;wtLvl=0}
+    // Draw from RO Tank
+    if(rtUsable>0&&roDem>0){
+      roLvl-=roDem;
+      if(roLvl<0){defMin++;roLvl=0}
     }
 
-    // Draw from RO Tank (if no cafe and no pure water tank)
-    if(!cafe && wtTotalVol===0 && rtUsable>0 && dem>0){
-      roLvl-=dem;
-      if(roLvl<0){defMin++;roLvl=0}
+    // Draw from Water Tank w float switch
+    if(wtTotalVol>0&&wtDem>0){
+      wtLvl-=wtDem;
+      if(wtLvl<0){defMin++;wtLvl=0}
     }
 
     // Cafe Station refill logic
