@@ -84,7 +84,7 @@ table.tl{border-collapse:collapse;min-width:100%}
 .tl td.el{text-align:left;padding:4px 8px;font-weight:600;font-size:12px;position:sticky;left:0;background:var(--wh);z-index:1;white-space:nowrap}
 .tl td.ehead{background:#EAECF0;font-weight:700;font-size:12px;text-align:left;padding-left:8px;position:sticky;left:0;z-index:1;color:var(--blk)}
 .tl td.eheadcell{background:#EAECF0}
-.tl td.c{cursor:pointer;transition:.1s}
+.tl td.c{cursor:pointer;transition:.1s;scroll-margin-left:224px;scroll-margin-right:4px}
 .tl td.c:hover{background:var(--bwl)}
 .tl td.c.a{background:var(--bw);color:#fff;font-weight:700;font-size:10px}
 .tl td.c.a:hover{background:var(--bwd)}
@@ -645,7 +645,9 @@ function cRt(ri,m){
 
 function focusCell(){
   const cell=document.querySelector(`td[data-r="${focR}"][data-c="${focC}"]`);
-  if(cell)cell.focus();
+  if(!cell)return;
+  cell.focus({preventScroll:true});
+  cell.scrollIntoView({behavior:'instant',block:'nearest',inline:'nearest'});
 }
 
 // Keyboard navigation
