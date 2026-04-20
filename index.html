@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bluewater Installation & Capacity Tool</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bw:#4A6AF5;--bwl:#EEF1FE;--bwd:#2D4AD0;--blk:#1A1A1A;--gr:#F7F7F8;--gm:#D1D5DB;--wh:#FFF;--red:#D32F2F;--grn:#2E7D32;--org:#F59E0B;--r:10px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -129,7 +130,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   .ctn{padding:10px 0}
   /* Page 1: Results */
   #step-4{display:block!important}
-  #step-1,#step-2,#step-3{display:none!important}
+  #step-1,#step-2,#step-3,#step-5{display:none!important}
   /* Page 2: Flow + Notes */
   #print-page2{display:block!important;page-break-before:always}
   #print-page2 .fa{zoom:0.55;transform-origin:top left}
@@ -144,6 +145,31 @@ table.tl{border-collapse:collapse;min-width:100%}
 
 #print-page2{display:none}
 .fn .nnum{display:none}
+
+/* SAVED CONFIGS */
+.save-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.save-bar input[type="text"]{flex:1;min-width:200px}
+.cfg-list{margin-top:16px}
+.cfg-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gr);border-radius:8px;margin-bottom:6px;transition:.15s}
+.cfg-item:hover{background:var(--bwl)}
+.cfg-info{cursor:pointer;flex:1}
+.cfg-title{font-weight:700;font-size:14px}
+.cfg-meta{font-size:11px;color:#888;margin-top:2px}
+.cfg-actions{display:flex;gap:6px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--blk);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
+.auth-box{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.auth-box h2{margin-bottom:6px}
+.auth-box p{font-size:13px;color:#888;margin-bottom:20px}
+.auth-box input[type="email"]{margin-bottom:12px}
+.auth-box .bp{width:100%;padding:12px}
+.auth-msg{font-size:13px;margin-top:12px;color:var(--grn)}
+.auth-err{font-size:13px;margin-top:12px;color:var(--red)}
+.user-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:#888}
+.user-bar button{font-size:11px;padding:4px 12px}
 </style>
 </head>
 <body>
@@ -158,14 +184,35 @@ table.tl{border-collapse:collapse;min-width:100%}
       <button id="bimp" onclick="setU('i')">Imperial</button>
     </div>
   </div>
+  <div class="user-bar" id="user-bar" style="display:none">
+    <span id="user-email"></span>
+    <button class="bs bsm" onclick="signOut()">Sign out</button>
+  </div>
 </header>
 
-<div class="ctn">
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="logo" style="justify-content:center;margin-bottom:16px"><div class="logo-c"></div><span>Bluewater</span></div>
+    <h2 id="auth-title">Sign in</h2>
+    <p id="auth-desc">Enter your email and password.</p>
+    <input type="email" id="auth-email" placeholder="your@email.com">
+    <input type="password" id="auth-pass" placeholder="Password (min 6 characters)" style="margin-top:8px" onkeydown="if(event.key==='Enter')doAuth()">
+    <button class="bp" style="margin-top:12px" id="auth-btn" onclick="doAuth()">Sign in</button>
+    <p style="margin-top:12px;font-size:13px">
+      <span id="auth-toggle-text">No account?</span>
+      <a href="#" id="auth-toggle" onclick="toggleAuthMode(event)" style="color:var(--bw);font-weight:600">Create one</a>
+    </p>
+    <div id="auth-msg"></div>
+  </div>
+</div>
+
+<div class="ctn" id="app-container" style="display:none">
   <div class="snav">
     <button class="sb act" onclick="goTo(1)" id="s1">1. Flow Diagram</button>
     <button class="sb" onclick="goTo(2)" id="s2">2. Equipment</button>
     <button class="sb" onclick="goTo(3)" id="s3">3. Timeline</button>
     <button class="sb" onclick="goTo(4)" id="s4">4. Results</button>
+    <button class="sb" onclick="goTo(5)" id="s5">5. Saved</button>
   </div>
 
   <div id="step-1">
@@ -218,6 +265,21 @@ table.tl{border-collapse:collapse;min-width:100%}
     </div>
   </div>
 
+  <div id="step-5" class="hidden">
+    <div class="sec">
+      <h2>Save & Load Configurations</h2>
+      <div class="note" style="margin-bottom:12px">Save the current configuration to Supabase, or load a previous one.</div>
+      <div class="save-bar">
+        <input type="text" id="cfg-title" placeholder="Title auto-generated from machine model..." readonly>
+        <input type="text" id="cfg-creator" placeholder="Your name (optional)" style="max-width:180px">
+        <button class="bp" onclick="saveCfg()">Save Configuration</button>
+      </div>
+      <div class="cfg-list" id="cfg-list">
+        <div style="color:#999;font-size:13px;padding:12px">Loading saved configurations...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Print page 2: Flow diagram + notes -->
   <div id="print-page2">
     <div class="sec">
@@ -231,6 +293,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
 <div id="modal" class="mo hidden" onclick="if(event.target===this)cm()"><div class="mb" id="mc"></div></div>
 
 <script>
@@ -287,7 +350,7 @@ function fV(v){if(imp)return(v/29.5735).toFixed(1)+' fl oz';return v>=1000?(v/10
 // ================================================================
 // NAV
 // ================================================================
-function goTo(n){for(let i=1;i<=4;i++){document.getElementById('step-'+i).classList.toggle('hidden',i!==n);document.getElementById('s'+i).classList.toggle('act',i===n)}if(n===2)renderEq();if(n===3)buildTL();if(n===4)runSim()}
+function goTo(n){for(let i=1;i<=5;i++){document.getElementById('step-'+i).classList.toggle('hidden',i!==n);document.getElementById('s'+i).classList.toggle('act',i===n)}if(n===2)renderEq();if(n===3)buildTL();if(n===4)runSim();if(n===5){updCfgTitle();loadCfgs()}}
 
 // ================================================================
 // FLOW RENDERING
@@ -934,6 +997,190 @@ function runSim(){
       plugins:{title:{display:true,text:'Tank Levels',font:{size:14}},legend:{position:'top'}},
       scales:{x:{title:{display:true,text:'Minute'}},y:{title:{display:true,text:tU},beginAtZero:true}}}
   });
+}
+
+// ================================================================
+// SUPABASE
+// ================================================================
+const SUPABASE_URL = 'https://eivyuucsmxxclobrlkki.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_JRhqVzh3ul1xSre4d7Vp1g_Jkc6pNvK';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let currentUser = null;
+
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ================================================================
+// AUTH
+// ================================================================
+let isSignUp=false;
+
+function toggleAuthMode(e){
+  e.preventDefault();
+  isSignUp=!isSignUp;
+  document.getElementById('auth-title').textContent=isSignUp?'Create account':'Sign in';
+  document.getElementById('auth-desc').textContent=isSignUp?'Choose a password to create your account.':'Enter your email and password.';
+  document.getElementById('auth-btn').textContent=isSignUp?'Create account':'Sign in';
+  document.getElementById('auth-toggle-text').textContent=isSignUp?'Already have an account?':'No account?';
+  document.getElementById('auth-toggle').textContent=isSignUp?'Sign in':'Create one';
+  document.getElementById('auth-msg').textContent='';
+}
+
+async function doAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-pass').value;
+  const msgEl=document.getElementById('auth-msg');
+
+  if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email.';return}
+  if(!password||password.length<6){msgEl.className='auth-err';msgEl.textContent='Password must be at least 6 characters.';return}
+
+  document.getElementById('auth-btn').disabled=true;
+  msgEl.className='auth-msg';msgEl.textContent=isSignUp?'Creating account...':'Signing in...';
+
+  if(isSignUp){
+    const res=await fetch(SUPABASE_URL+'/functions/v1/capacity-signup',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+    const json=await res.json();
+    if(!res.ok){msgEl.className='auth-err';msgEl.textContent=json.error;document.getElementById('auth-btn').disabled=false;return}
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
+  } else {
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
+  }
+}
+
+async function signOut(){
+  await sb.auth.signOut();
+  currentUser=null;
+  document.getElementById('app-container').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('user-bar').style.display='none';
+}
+
+function showApp(user){
+  currentUser=user;
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-container').style.display='block';
+  document.getElementById('user-bar').style.display='flex';
+  document.getElementById('user-email').textContent=user.email;
+  renderFlow();
+}
+
+sb.auth.onAuthStateChange((event,session)=>{
+  if(session?.user) showApp(session.user);
+});
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session?.user) showApp(session.user);
+});
+
+// ================================================================
+// SAVED CONFIGS
+// ================================================================
+function getCfgTitle(){
+  const ro=colRO(mainPath);
+  if(!ro) return 'Bluewater — No purifier';
+  const modelMap={cleone:'Bluewater Cleone',spirit:'Bluewater Spirit',pro600:'Bluewater PRO'};
+  return modelMap[ro.ct]||('Bluewater '+ro.l);
+}
+
+function getCfgModel(){
+  const ro=colRO(mainPath);
+  if(!ro) return 'Unknown';
+  const modelMap={cleone:'Cleone',spirit:'Spirit',pro600:'PRO'};
+  return modelMap[ro.ct]||ro.l;
+}
+
+function updCfgTitle(){
+  document.getElementById('cfg-title').value=getCfgTitle();
+}
+
+async function saveCfg(){
+  const title=getCfgTitle();
+  const model=getCfgModel();
+  const creator=document.getElementById('cfg-creator').value.trim()||null;
+  const notes=document.getElementById('plumber-notes').value;
+
+  const {error}=await sb.from('capacity_configurations').insert({
+    title,
+    brand:'Bluewater',
+    model,
+    flow_data:JSON.parse(JSON.stringify(mainPath)),
+    equipment_config:JSON.parse(JSON.stringify(eqCfg)),
+    timeline_data:JSON.parse(JSON.stringify(tl)),
+    notes,
+    unit_system:imp?'imperial':'metric',
+    created_by:creator,
+    user_id:currentUser?.id
+  });
+
+  if(error){toast('Error: '+error.message);console.error(error);return}
+  toast('Configuration saved!');
+  loadCfgs();
+}
+
+async function loadCfgs(){
+  const el=document.getElementById('cfg-list');
+  const {data,error}=await sb.from('capacity_configurations')
+    .select('*')
+    .order('created_at',{ascending:false})
+    .limit(50);
+
+  if(error){el.innerHTML=`<div style="color:var(--red);padding:12px">Error loading: ${error.message}</div>`;return}
+  if(!data||!data.length){el.innerHTML='<div style="color:#999;font-size:13px;padding:12px">No saved configurations yet.</div>';return}
+
+  el.innerHTML=data.map(c=>{
+    const d=new Date(c.created_at);
+    const date=d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    const by=c.created_by?' · '+c.created_by:'';
+    return `<div class="cfg-item">
+      <div class="cfg-info" onclick="loadCfg('${c.id}')">
+        <div class="cfg-title">${c.title}</div>
+        <div class="cfg-meta">${date}${by} · ${c.unit_system}</div>
+      </div>
+      <div class="cfg-actions">
+        <button class="bs bsm" onclick="loadCfg('${c.id}')">Load</button>
+        <button class="bd bsm" onclick="delCfg('${c.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCfg(id){
+  const {data,error}=await sb.from('capacity_configurations').select('*').eq('id',id).single();
+  if(error||!data){toast('Error loading configuration');return}
+
+  mainPath=data.flow_data;
+  ic=0;
+  const allIds=JSON.stringify(mainPath).match(/n(\d+)/g)||[];
+  allIds.forEach(m=>{const n=parseInt(m.slice(1));if(n>ic)ic=n});
+
+  eqCfg=data.equipment_config;
+  tl=data.timeline_data;
+  document.getElementById('plumber-notes').value=data.notes||'';
+  if(data.unit_system==='imperial'&&!imp) setU('i');
+  else if(data.unit_system==='metric'&&imp) setU('m');
+
+  eqN={};
+  colEq(mainPath).forEach(eq=>{if(eq.et){if(!eqN[eq.et])eqN[eq.et]=0;eqN[eq.et]++}});
+
+  renderFlow();
+  toast('Loaded: '+data.title);
+  goTo(1);
+}
+
+async function delCfg(id){
+  if(!confirm('Delete this configuration?')) return;
+  const {error}=await sb.from('capacity_configurations').delete().eq('id',id);
+  if(error){toast('Error deleting');return}
+  toast('Configuration deleted');
+  loadCfgs();
 }
 
 // INIT
