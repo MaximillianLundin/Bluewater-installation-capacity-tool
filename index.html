@@ -186,7 +186,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   </div>
   <div class="user-bar" id="user-bar" style="display:none">
     <span id="user-email"></span>
-    <button class="bs bsm" onclick="signOut()">Sign out</button>
+    <button class="bd bsm" onclick="signOut()">Log out</button>
   </div>
 </header>
 
@@ -196,8 +196,11 @@ table.tl{border-collapse:collapse;min-width:100%}
     <h2 id="auth-title">Sign in</h2>
     <p id="auth-desc">Enter your email and password.</p>
     <input type="email" id="auth-email" placeholder="your@email.com">
-    <input type="password" id="auth-pass" placeholder="Password (min 6 characters)" style="margin-top:8px" onkeydown="if(event.key==='Enter')doAuth()">
-    <button class="bp" style="margin-top:12px" id="auth-btn" onclick="doAuth()">Sign in</button>
+    <div id="auth-pass-wrap">
+      <input type="password" id="auth-pass" placeholder="Password (min 6 characters)" style="margin-top:8px;margin-bottom:4px" onkeydown="if(event.key==='Enter')doAuth()">
+      <div style="text-align:right;margin-bottom:4px"><a href="#" onclick="forgotPassword(event)" style="font-size:12px;color:#888">Forgot password?</a></div>
+    </div>
+    <button class="bp" style="margin-top:4px" id="auth-btn" onclick="doAuth()">Sign in</button>
     <p style="margin-top:12px;font-size:13px">
       <span id="auth-toggle-text">No account?</span>
       <a href="#" id="auth-toggle" onclick="toggleAuthMode(event)" style="color:var(--bw);font-weight:600">Create one</a>
@@ -1025,6 +1028,7 @@ function toggleAuthMode(e){
   document.getElementById('auth-btn').textContent=isSignUp?'Create account':'Sign in';
   document.getElementById('auth-toggle-text').textContent=isSignUp?'Already have an account?':'No account?';
   document.getElementById('auth-toggle').textContent=isSignUp?'Sign in':'Create one';
+  document.getElementById('auth-pass-wrap').style.display=isSignUp?'block':'block';
   document.getElementById('auth-msg').textContent='';
 }
 
@@ -1032,35 +1036,37 @@ async function doAuth(){
   const email=document.getElementById('auth-email').value.trim();
   const password=document.getElementById('auth-pass').value;
   const msgEl=document.getElementById('auth-msg');
-
   if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email.';return}
   if(!password||password.length<6){msgEl.className='auth-err';msgEl.textContent='Password must be at least 6 characters.';return}
-
   document.getElementById('auth-btn').disabled=true;
   msgEl.className='auth-msg';msgEl.textContent=isSignUp?'Creating account...':'Signing in...';
-
   if(isSignUp){
-    const res=await fetch(SUPABASE_URL+'/functions/v1/capacity-signup',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,password})
-    });
-    const json=await res.json();
-    if(!res.ok){msgEl.className='auth-err';msgEl.textContent=json.error;document.getElementById('auth-btn').disabled=false;return}
-    const {error}=await sb.auth.signInWithPassword({email,password});
+    const {error}=await sb.auth.signUp({email,password});
     if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
+    // Auto sign-in after sign-up
+    const {error:e2}=await sb.auth.signInWithPassword({email,password});
+    if(e2){msgEl.className='auth-err';msgEl.textContent=e2.message;document.getElementById('auth-btn').disabled=false;return}
   } else {
     const {error}=await sb.auth.signInWithPassword({email,password});
     if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
   }
 }
 
+async function forgotPassword(e){
+  e.preventDefault();
+  const email=document.getElementById('auth-email').value.trim();
+  const msgEl=document.getElementById('auth-msg');
+  if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email address first.';return}
+  msgEl.className='auth-msg';msgEl.textContent='Sending reset link...';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:'https://bluewater-installation-capacity-too.vercel.app'
+  });
+  if(error){msgEl.className='auth-err';msgEl.textContent=error.message;}
+  else{msgEl.className='auth-msg';msgEl.textContent='Reset link sent — check your email.';}
+}
+
 async function signOut(){
   await sb.auth.signOut();
-  currentUser=null;
-  document.getElementById('app-container').style.display='none';
-  document.getElementById('auth-screen').style.display='flex';
-  document.getElementById('user-bar').style.display='none';
 }
 
 function showApp(user){
@@ -1072,12 +1078,23 @@ function showApp(user){
   renderFlow();
 }
 
+function showAuth(){
+  currentUser=null;
+  document.getElementById('app-container').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('user-bar').style.display='none';
+  document.getElementById('auth-btn').disabled=false;
+}
+
 sb.auth.onAuthStateChange((event,session)=>{
-  if(session?.user) showApp(session.user);
+  if(event==='SIGNED_IN'&&session?.user) showApp(session.user);
+  else if(event==='SIGNED_OUT') showAuth();
 });
 
+// On load: restore session from localStorage automatically
 sb.auth.getSession().then(({data:{session}})=>{
   if(session?.user) showApp(session.user);
+  else showAuth();
 });
 
 // ================================================================
