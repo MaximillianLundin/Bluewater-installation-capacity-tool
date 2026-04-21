@@ -225,6 +225,7 @@ table.tl{border-collapse:collapse;min-width:100%}
     <button class="sb" onclick="goTo(3)" id="s3">3. Timeline</button>
     <button class="sb" onclick="goTo(4)" id="s4">4. Results</button>
     <button class="sb" onclick="goTo(5)" id="s5">5. Saved</button>
+    <button class="sb hidden" onclick="goTo(6)" id="s6">Admin</button>
   </div>
 
   <div id="step-1">
@@ -292,6 +293,14 @@ table.tl{border-collapse:collapse;min-width:100%}
     </div>
   </div>
 
+  <div id="step-6" class="hidden">
+    <div class="sec">
+      <h2>Admin — User Access</h2>
+      <p class="note" style="margin-bottom:16px">Only visible to you. Revoking access signs the user out within 60 seconds.</p>
+      <div id="admin-users"></div>
+    </div>
+  </div>
+
   <!-- Print page 2: Flow diagram + notes -->
   <div id="print-page2">
     <div class="sec">
@@ -301,16 +310,6 @@ table.tl{border-collapse:collapse;min-width:100%}
         <h2>Installation Notes</h2>
         <div id="notes-print" style="white-space:pre-wrap;font-size:13px;min-height:60px;border:1px solid #ddd;padding:12px;border-radius:8px"></div>
       </div>
-    </div>
-  </div>
-</div>
-
-<div id="admin-screen" class="hidden">
-  <div class="ctn">
-    <div class="sec">
-      <h2>Admin — User Access</h2>
-      <p class="note" style="margin-bottom:16px">Only visible to you. Revoking access signs the user out within 60 seconds.</p>
-      <div id="admin-users"></div>
     </div>
   </div>
 </div>
@@ -372,7 +371,7 @@ function fV(v){if(imp)return(v/29.5735).toFixed(1)+' fl oz';return v>=1000?(v/10
 // ================================================================
 // NAV
 // ================================================================
-function goTo(n){for(let i=1;i<=5;i++){document.getElementById('step-'+i).classList.toggle('hidden',i!==n);document.getElementById('s'+i).classList.toggle('act',i===n)}if(n===2)renderEq();if(n===3)buildTL();if(n===4)runSim();if(n===5){updCfgTitle();loadCfgs()}}
+function goTo(n){for(let i=1;i<=6;i++){document.getElementById('step-'+i).classList.toggle('hidden',i!==n);document.getElementById('s'+i).classList.toggle('act',i===n)}if(n===2)renderEq();if(n===3)buildTL();if(n===4)runSim();if(n===5){updCfgTitle();loadCfgs()}if(n===6)loadAdminData();}
 
 // ================================================================
 // FLOW RENDERING
@@ -1037,7 +1036,7 @@ function toast(msg){
 // ================================================================
 // AUTH
 // ================================================================
-const ADMIN_EMAIL='maximillianlundin@bluewatergroup.com';
+const ADMIN_EMAIL='maximillian.lundin@bluewatergroup.com';
 
 async function sendMagicLink(){
   const email=document.getElementById('auth-email').value.trim();
@@ -1086,6 +1085,7 @@ async function showApp(user){
   document.getElementById('app-container').style.display='block';
   document.getElementById('user-bar').style.display='flex';
   document.getElementById('user-email').textContent=user.email;
+  document.getElementById('s6').classList.toggle('hidden',user.email!==ADMIN_EMAIL);
   document.getElementById('admin-btn').style.display=user.email===ADMIN_EMAIL?'inline-block':'none';
   renderFlow();
   if(banCheckInterval)clearInterval(banCheckInterval);
@@ -1225,17 +1225,7 @@ async function delCfg(id){
 // ================================================================
 // ADMIN
 // ================================================================
-function toggleAdmin(){
-  const as=document.getElementById('admin-screen');
-  const ac=document.getElementById('app-container');
-  const btn=document.getElementById('admin-btn');
-  if(as.classList.contains('hidden')){
-    as.classList.remove('hidden');ac.style.display='none';
-    btn.textContent='← App';loadAdminData();
-  } else {
-    as.classList.add('hidden');ac.style.display='block';btn.textContent='Admin';
-  }
-}
+function toggleAdmin(){goTo(6);}
 
 async function loadAdminData(){
   const ul=document.getElementById('admin-users');
