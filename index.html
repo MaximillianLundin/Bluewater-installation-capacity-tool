@@ -170,6 +170,15 @@ table.tl{border-collapse:collapse;min-width:100%}
 .auth-err{font-size:13px;margin-top:12px;color:var(--red)}
 .user-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:#888}
 .user-bar button{font-size:11px;padding:4px 12px}
+
+/* ADMIN */
+.admin-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gr);border-radius:8px;margin-bottom:6px;gap:12px}
+.admin-user-info{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap}
+.admin-email{font-weight:600;font-size:14px}
+.admin-meta{font-size:12px;color:#888}
+.admin-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px}
+.admin-badge.bad{background:#FFEBEE;color:var(--red);border:1px solid var(--red)}
+.admin-badge.self{background:var(--bwl);color:var(--bw);border:1px solid var(--bw)}
 </style>
 </head>
 <body>
@@ -186,6 +195,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   </div>
   <div class="user-bar" id="user-bar" style="display:none">
     <span id="user-email"></span>
+    <button class="bs bsm" id="admin-btn" onclick="toggleAdmin()" style="display:none">Admin</button>
     <button class="bd bsm" onclick="signOut()">Log out</button>
   </div>
 </header>
@@ -193,18 +203,17 @@ table.tl{border-collapse:collapse;min-width:100%}
 <div id="auth-screen">
   <div class="auth-box">
     <div class="logo" style="justify-content:center;margin-bottom:16px"><div class="logo-c"></div><span>Bluewater</span></div>
-    <h2 id="auth-title">Sign in</h2>
-    <p id="auth-desc">Enter your email and password.</p>
-    <input type="email" id="auth-email" placeholder="your@email.com">
-    <div id="auth-pass-wrap">
-      <input type="password" id="auth-pass" placeholder="Password (min 6 characters)" style="margin-top:8px;margin-bottom:4px" onkeydown="if(event.key==='Enter')doAuth()">
-      <div style="text-align:right;margin-bottom:4px"><a href="#" onclick="forgotPassword(event)" style="font-size:12px;color:#888">Forgot password?</a></div>
+    <h2>Sign in</h2>
+    <div id="auth-form">
+      <p>Enter your email — we'll send you a sign-in link.</p>
+      <input type="email" id="auth-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()" style="margin-top:12px">
+      <button class="bp" style="margin-top:12px" id="auth-btn" onclick="sendMagicLink()">Send sign-in link</button>
     </div>
-    <button class="bp" style="margin-top:4px" id="auth-btn" onclick="doAuth()">Sign in</button>
-    <p style="margin-top:12px;font-size:13px">
-      <span id="auth-toggle-text">No account?</span>
-      <a href="#" id="auth-toggle" onclick="toggleAuthMode(event)" style="color:var(--bw);font-weight:600">Create one</a>
-    </p>
+    <div id="auth-sent" class="hidden">
+      <p style="color:var(--grn);font-weight:600;margin-bottom:8px">Link sent! Check your inbox.</p>
+      <p style="font-size:13px;color:#888">Click the link in the email to sign in.</p>
+      <button class="bs bsm" style="margin-top:16px" onclick="resetAuthForm()">Try a different email</button>
+    </div>
     <div id="auth-msg"></div>
   </div>
 </div>
@@ -292,6 +301,16 @@ table.tl{border-collapse:collapse;min-width:100%}
         <h2>Installation Notes</h2>
         <div id="notes-print" style="white-space:pre-wrap;font-size:13px;min-height:60px;border:1px solid #ddd;padding:12px;border-radius:8px"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="admin-screen" class="hidden">
+  <div class="ctn">
+    <div class="sec">
+      <h2>Admin — User Access</h2>
+      <p class="note" style="margin-bottom:16px">Only visible to you. Revoking access signs the user out within 60 seconds.</p>
+      <div id="admin-users"></div>
     </div>
   </div>
 </div>
@@ -1018,72 +1037,75 @@ function toast(msg){
 // ================================================================
 // AUTH
 // ================================================================
-let isSignUp=false;
+const ADMIN_EMAIL='maximillianlundin@bluewatergroup.com';
 
-function toggleAuthMode(e){
-  e.preventDefault();
-  isSignUp=!isSignUp;
-  document.getElementById('auth-title').textContent=isSignUp?'Create account':'Sign in';
-  document.getElementById('auth-desc').textContent=isSignUp?'Choose a password to create your account.':'Enter your email and password.';
-  document.getElementById('auth-btn').textContent=isSignUp?'Create account':'Sign in';
-  document.getElementById('auth-toggle-text').textContent=isSignUp?'Already have an account?':'No account?';
-  document.getElementById('auth-toggle').textContent=isSignUp?'Sign in':'Create one';
-  document.getElementById('auth-pass-wrap').style.display=isSignUp?'block':'block';
-  document.getElementById('auth-msg').textContent='';
-}
-
-async function doAuth(){
+async function sendMagicLink(){
   const email=document.getElementById('auth-email').value.trim();
-  const password=document.getElementById('auth-pass').value;
   const msgEl=document.getElementById('auth-msg');
-  if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email.';return}
-  if(!password||password.length<6){msgEl.className='auth-err';msgEl.textContent='Password must be at least 6 characters.';return}
+  msgEl.textContent='';
+  if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email address.';return}
   document.getElementById('auth-btn').disabled=true;
-  msgEl.className='auth-msg';msgEl.textContent=isSignUp?'Creating account...':'Signing in...';
-  if(isSignUp){
-    const {error}=await sb.auth.signUp({email,password});
-    if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
-    // Auto sign-in after sign-up
-    const {error:e2}=await sb.auth.signInWithPassword({email,password});
-    if(e2){msgEl.className='auth-err';msgEl.textContent=e2.message;document.getElementById('auth-btn').disabled=false;return}
-  } else {
-    const {error}=await sb.auth.signInWithPassword({email,password});
-    if(error){msgEl.className='auth-err';msgEl.textContent=error.message;document.getElementById('auth-btn').disabled=false;return}
-  }
+  const {error}=await sb.auth.signInWithOtp({
+    email,
+    options:{emailRedirectTo:'https://bluewater-installation-capacity-too.vercel.app'}
+  });
+  document.getElementById('auth-btn').disabled=false;
+  if(error){msgEl.className='auth-err';msgEl.textContent=error.message;return}
+  document.getElementById('auth-form').classList.add('hidden');
+  document.getElementById('auth-sent').classList.remove('hidden');
 }
 
-async function forgotPassword(e){
-  e.preventDefault();
-  const email=document.getElementById('auth-email').value.trim();
-  const msgEl=document.getElementById('auth-msg');
-  if(!email){msgEl.className='auth-err';msgEl.textContent='Enter your email address first.';return}
-  msgEl.className='auth-msg';msgEl.textContent='Sending reset link...';
-  const {error}=await sb.auth.resetPasswordForEmail(email,{
-    redirectTo:'https://bluewater-installation-capacity-too.vercel.app'
-  });
-  if(error){msgEl.className='auth-err';msgEl.textContent=error.message;}
-  else{msgEl.className='auth-msg';msgEl.textContent='Reset link sent — check your email.';}
+function resetAuthForm(){
+  document.getElementById('auth-sent').classList.add('hidden');
+  document.getElementById('auth-form').classList.remove('hidden');
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-msg').textContent='';
 }
 
 async function signOut(){
   await sb.auth.signOut();
 }
 
-function showApp(user){
+async function checkBanned(user){
+  const {data}=await sb.from('banned_users').select('email').eq('email',user.email).maybeSingle();
+  return !!data;
+}
+
+async function trackUser(user){
+  await sb.from('app_users').upsert({email:user.email,user_id:user.id,last_seen:new Date().toISOString()},{onConflict:'email'});
+}
+
+let banCheckInterval=null;
+
+async function showApp(user){
+  const banned=await checkBanned(user);
+  if(banned){await sb.auth.signOut();showAuth('Your access has been revoked.');return}
   currentUser=user;
+  await trackUser(user);
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-container').style.display='block';
   document.getElementById('user-bar').style.display='flex';
   document.getElementById('user-email').textContent=user.email;
+  document.getElementById('admin-btn').style.display=user.email===ADMIN_EMAIL?'inline-block':'none';
   renderFlow();
+  if(banCheckInterval)clearInterval(banCheckInterval);
+  banCheckInterval=setInterval(async()=>{
+    if(!currentUser)return;
+    const b=await checkBanned(currentUser);
+    if(b){await sb.auth.signOut();showAuth('Your access has been revoked.');}
+  },60000);
 }
 
-function showAuth(){
+function showAuth(msg){
+  if(banCheckInterval){clearInterval(banCheckInterval);banCheckInterval=null;}
   currentUser=null;
   document.getElementById('app-container').style.display='none';
+  document.getElementById('admin-screen').classList.add('hidden');
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('user-bar').style.display='none';
-  document.getElementById('auth-btn').disabled=false;
+  document.getElementById('admin-btn').style.display='none';
+  resetAuthForm();
+  if(msg){const el=document.getElementById('auth-msg');el.className='auth-err';el.textContent=msg;}
 }
 
 sb.auth.onAuthStateChange((event,session)=>{
@@ -1198,6 +1220,60 @@ async function delCfg(id){
   if(error){toast('Error deleting');return}
   toast('Configuration deleted');
   loadCfgs();
+}
+
+// ================================================================
+// ADMIN
+// ================================================================
+function toggleAdmin(){
+  const as=document.getElementById('admin-screen');
+  const ac=document.getElementById('app-container');
+  const btn=document.getElementById('admin-btn');
+  if(as.classList.contains('hidden')){
+    as.classList.remove('hidden');ac.style.display='none';
+    btn.textContent='← App';loadAdminData();
+  } else {
+    as.classList.add('hidden');ac.style.display='block';btn.textContent='Admin';
+  }
+}
+
+async function loadAdminData(){
+  const ul=document.getElementById('admin-users');
+  ul.innerHTML='<div style="color:#999;font-size:13px;padding:12px">Loading...</div>';
+  const [{data:users},{data:banned}]=await Promise.all([
+    sb.from('app_users').select('*').order('last_seen',{ascending:false}),
+    sb.from('banned_users').select('email')
+  ]);
+  const bannedSet=new Set((banned||[]).map(b=>b.email));
+  if(!users||!users.length){ul.innerHTML='<div style="color:#999;font-size:13px;padding:12px">No users have logged in yet.</div>';return}
+  ul.innerHTML=users.map(u=>{
+    const isBanned=bannedSet.has(u.email);
+    const isSelf=u.email===ADMIN_EMAIL;
+    const lastSeen=new Date(u.last_seen).toLocaleString('sv-SE',{dateStyle:'short',timeStyle:'short'});
+    return `<div class="admin-row">
+      <div class="admin-user-info">
+        <span class="admin-email">${u.email}</span>
+        <span class="admin-meta">Last seen: ${lastSeen}</span>
+        ${isBanned?'<span class="admin-badge bad">Access revoked</span>':''}
+        ${isSelf?'<span class="admin-badge self">You</span>':''}
+      </div>
+      ${!isSelf?`<button class="${isBanned?'bp':'bd'} bsm" onclick="${isBanned?'unbanUser':'banUser'}('${u.email}')">${isBanned?'Restore access':'Revoke access'}</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function banUser(email){
+  if(!confirm('Revoke access for '+email+'?'))return;
+  const {error}=await sb.from('banned_users').insert({email});
+  if(error){toast('Error: '+error.message);return}
+  toast('Access revoked for '+email);loadAdminData();
+}
+
+async function unbanUser(email){
+  if(!confirm('Restore access for '+email+'?'))return;
+  const {error}=await sb.from('banned_users').delete().eq('email',email);
+  if(error){toast('Error: '+error.message);return}
+  toast('Access restored for '+email);loadAdminData();
 }
 
 // INIT
