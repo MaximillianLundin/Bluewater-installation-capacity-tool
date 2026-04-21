@@ -393,14 +393,15 @@ function renderFlow(){
   document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
 }
 
-function rPath(path,pid,showNums){
+function rPath(path,pid,showNums,leadingConnector=false){
   let h='<div class="fr">';
   for(let i=0;i<path.length;i++){
     const nd=path[i];
     const prevIsY=i>0&&path[i-1].isY;
     // Skip the trailing select (and its connector) that appears after a Y-node — it floats in empty space
     if(nd.ct==='select'&&prevIsY) continue;
-    if(i>0) h+=`<div class="fl" onclick="lnClick('${pid}',${i})"><div class="ll">click</div></div>`;
+    const addConn=(i>0)||(i===0&&leadingConnector&&nd.ct!=='select');
+    if(addConn) h+=`<div class="fl" onclick="lnClick('${pid}',${i})"><div class="ll">click</div></div>`;
 
     if(nd.ct==='select'){
       h+=`<div class="fn sel" onclick="selClick('${pid}',${i})">+ Select</div>`;
@@ -408,8 +409,8 @@ function rPath(path,pid,showNums){
       h+=`<div class="fi yc" onclick="fiClick('${pid}',${i})">Y</div>`;
       // T-split: inline fork, top branch up, bottom branch down
       h+=`<div class="yfork">`;
-      h+=`<div class="ybr"><div class="yconn ytop"></div>${rPath(nd.br[0],pid+'-0-'+nd.id,showNums)}</div>`;
-      h+=`<div class="ybr"><div class="yconn ybot"></div>${rPath(nd.br[1],pid+'-1-'+nd.id,showNums)}</div>`;
+      h+=`<div class="ybr"><div class="yconn ytop"></div>${rPath(nd.br[0],pid+'-0-'+nd.id,showNums,true)}</div>`;
+      h+=`<div class="ybr"><div class="yconn ybot"></div>${rPath(nd.br[1],pid+'-1-'+nd.id,showNums,true)}</div>`;
       h+=`</div>`;
     } else if(nd.isCV){
       h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
