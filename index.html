@@ -950,9 +950,10 @@ function runSim(){
   const cafeEqIds=eqIdsDownstreamOf(mainPath,'cafestation');
   const roEqIds=eqIdsDownstreamOf(mainPath,'rotank');
   const wtEqIds=eqIdsDownstreamOf(mainPath,'watertank');
+  const hwEqIds=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='hotwater').map(e=>e.id);
 
   const mins=[],demD=[],prodD=[],roD=[],cafeD=[],wtD=[];
-  let totalDem=0,defMin=0,overloadMins=0;
+  let totalDem=0,defMin=0,overloadMins=0,pressureRiskMins=0;
 
   for(let m=0;m<60;m++){
     mins.push(m);
@@ -1028,6 +1029,13 @@ function runSim(){
     const spiritShare=spiritDemanders>0?ppm/spiritDemanders:0;
     if(spiritDemanders>1) overloadMins++;
 
+    // Hot Water Tank pressure check: needs ≥1 bar; flag minutes where it's
+    // drawing AND the RO flow is split (simultaneous refill demands)
+    if(spiritDemanders>1&&hwEqIds.length>0){
+      const hwDraw=gMT(m,hwEqIds);
+      if(hwDraw>0) pressureRiskMins++;
+    }
+
     if(cafe&&cafeRefilling){cafeLvl+=spiritShare;if(cafeLvl>10)cafeLvl=10;}
     if(rtUsable>0&&roRefilling){roLvl+=spiritShare;if(roLvl>rtUsable)roLvl=rtUsable;}
     if(wtTotalVol>0&&wtRefilling){wtLvl+=spiritShare;if(wtLvl>wtStopLvl)wtLvl=wtStopLvl;}
@@ -1083,10 +1091,13 @@ function runSim(){
   const tdD=imp?lV(totalDem):totalDem.toFixed(1);
 
   const olSt=overloadMins===0?'ok':overloadMins<=5?'wa':'cr';
+  const prSt=pressureRiskMins===0?'ok':'cr';
+  const prCard=hwEqIds.length>0?`<div class="rc ${prSt}"><div class="rv">${pressureRiskMins}</div><div class="rl">Minutes Hot Water Tank below 1 bar (RO flow split while drawing)</div></div>`:'';
   document.getElementById('rsum').innerHTML=
     `<div class="rc ${st}"><div class="rv">${defMin}</div><div class="rl">Minutes with water deficit</div></div>`+
     `<div class="rc ${ratio>120?'ok':ratio>80?'wa':'cr'}"><div class="rv">${ratio.toFixed(0)}%</div><div class="rl">Production / Demand ratio</div></div>`+
     `<div class="rc ${olSt}"><div class="rv">${overloadMins}</div><div class="rl">Minutes RO capacity split (simultaneous refill)</div></div>`+
+    prCard+
     `<div class="rc ok"><div class="rv">${tdD} ${vU}</div><div class="rl">Total demand in 1 hour</div></div>`;
 
   const yU=imp?'fl oz':'ml';
