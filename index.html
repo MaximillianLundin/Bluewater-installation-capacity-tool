@@ -346,10 +346,13 @@ const CAT = {
   filter:{c:'Equipment',l:'Filter Brewer',s:'Batch brew',isEq:true,et:'filter'},
   hotwater:{c:'Equipment',l:'Hot Water Tank (Pour over, Chemex)',s:'300ml default draw',isEq:true,et:'hotwater'},
   coldwater:{c:'Equipment',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
-  bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'}
+  bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'},
+  icemachine:{c:'Equipment',l:'Ice Machine',s:'Tech specs TBD',isEq:true,et:'icemachine'}
 };
 
 const DRINKS=[{n:'Espresso',ml:70},{n:'Tea',ml:200},{n:'Americano',ml:150}];
+const ICE_DRINKS=[{n:'Ice Coffee',g:175},{n:'Smoothie',g:150}];
+const ICE_SPECS={waterRatio:2.02,maxKgHr:3.02}; // averaged across Hoshizaki/Scotsman UC/Scotsman CU/Manitowoc
 
 // ================================================================
 // STATE
@@ -562,6 +565,7 @@ function mkNd(key,c){
     else if(c.et==='hotwater') eqCfg[nd.id]={t:'hotwater',vol:300};
     else if(c.et==='coldwater') eqCfg[nd.id]={t:'coldwater',vol:500};
     else if(c.et==='bottles') eqCfg[nd.id]={t:'bottles',vol:330};
+    else if(c.et==='icemachine') eqCfg[nd.id]={t:'icemachine',drinks:JSON.parse(JSON.stringify(ICE_DRINKS)),binKg:20,standbyLhr:0.5};
     tl[nd.id]={};
   }
   return nd;
@@ -660,12 +664,17 @@ function renderEq(){
       d=`<div style="margin-top:6px"><label>Presumed volume per pour (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"><div class="note">Max 500ml, 30s between pours</div></div>`;
     } else if(c.t==='bottles'){
       d=`<div style="margin-top:6px"><label>Presumed bottle volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"></div>`;
+    } else if(c.t==='icemachine'){
+      d='Configure ice machine:';
+      x=`<div class="dt"><div class="db"><label>Bin size</label><input type="number" value="${c.binKg}" style="width:80px" onfocus="this.select()" onchange="uIceCfg('${eq.id}','binKg',this.value)"> kg</div><div class="db"><label>Standby draw</label><input type="number" step="0.1" value="${c.standbyLhr}" style="width:80px" onfocus="this.select()" onchange="uIceCfg('${eq.id}','standbyLhr',this.value)"> L/hr</div></div><div class="note" style="margin-top:4px">Avg specs used: ${ICE_SPECS.waterRatio} L water per kg ice · max ${ICE_SPECS.maxKgHr} kg/hr production. Bin starts full, depletes with servings + melting.</div><div style="margin-top:10px;font-weight:600;font-size:13px">Ice per serving:</div><div class="dt">${c.drinks.map((dk,i)=>`<div class="db"><label>${dk.n}</label><input type="number" value="${dk.g}" onfocus="this.select()" onchange="uIce('${eq.id}',${i},this.value)"> g</div>`).join('')}</div>`;
     }
     return `<div class="eqi"><div class="eqt"><span class="en">${eq.l}</span></div>${d}${x}</div>`;
   }).join('');
 }
 
 function uDk(id,i,v){const val=imp?Math.round(parseFloat(v)*29.5735):parseInt(v);if(eqCfg[id]&&eqCfg[id].drinks)eqCfg[id].drinks[i].ml=val||0}
+function uIce(id,i,v){const val=parseInt(v);if(eqCfg[id]&&eqCfg[id].drinks)eqCfg[id].drinks[i].g=val||0}
+function uIceCfg(id,k,v){if(!eqCfg[id])return;eqCfg[id][k]=parseFloat(v)||0}
 function uFlt(id,v){if(!eqCfg[id])return;eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0;renderEq()}
 function uVol(id,v){if(!eqCfg[id])return;eqCfg[id].vol=imp?Math.round(parseFloat(v)*29.5735):parseInt(v)||0}
 
@@ -686,6 +695,13 @@ function getTLRows(){
       });
     } else if(c.t==='filter'){
       rows.push({type:'eq',label:eq.l+' (cups à 200ml)',id:eq.id,ml:200,noGMT:true,eqId:eq.id});
+    } else if(c.t==='icemachine'){
+      rows.push({type:'header',label:eq.l,id:eq.id});
+      c.drinks.forEach(dk=>{
+        const key=eq.id+'_'+dk.n;
+        if(!tl[key])tl[key]={};
+        rows.push({type:'drink',label:'  '+dk.n+' ('+dk.g+' g)',id:key,ml:0,noGMT:true,eqId:eq.id,drink:dk.n});
+      });
     } else {
       rows.push({type:'eq',label:eq.l,id:eq.id,ml:c.vol,eqId:eq.id});
     }
@@ -798,6 +814,17 @@ function uSum(){
     let t=0;
     if(c.t==='espresso'){
       c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;for(let m=0;m<60;m++){const v=tl[key]?.[m];if(v)t+=v*dk.ml}});
+    } else if(c.t==='icemachine'){
+      let iceUsedKg=0;
+      c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;for(let m=0;m<60;m++){const v=tl[key]?.[m];if(v)iceUsedKg+=v*dk.g/1000}});
+      const meltKg=(c.standbyLhr||0.5)/ICE_SPECS.waterRatio;
+      t=Math.round((iceUsedKg+meltKg)*ICE_SPECS.waterRatio*1000);
+    } else if(c.t==='filter'){
+      let cups=0;for(let m=0;m<60;m++){const v=tl[eq.id]?.[m];if(v)cups+=v}
+      const hotVol=c.vol*(4000/4500);
+      const totalCups=Math.max(1,Math.floor(hotVol/200));
+      const triggerCups=Math.max(1,totalCups-2);
+      t=Math.floor(cups/triggerCups)*c.vol;
     } else {
       for(let m=0;m<60;m++){const v=tl[eq.id]?.[m];if(v)t+=v*c.vol}
     }
@@ -859,7 +886,7 @@ function clrTL(){
   // Also clear espresso drink keys
   colEq(mainPath).forEach(eq=>{
     const c=eqCfg[eq.id];if(!c)return;
-    if(c.t==='espresso') c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;tl[key]={}});
+    if(c.t==='espresso'||c.t==='icemachine') c.drinks.forEach(dk=>{const key=eq.id+'_'+dk.n;tl[key]={}});
     else tl[eq.id]={};
   });
   buildTL();
@@ -907,7 +934,16 @@ function runSim(){
     const hotVol=coldVol*(4000/4500);
     const totalCups=Math.max(1,Math.floor(hotVol*1000/200));
     const triggerCups=Math.max(1,totalCups-2);
-    return {id:e.id,coldVol,totalCups,triggerCups,consumed:0,state:'idle',minsLeft:0};
+    return {id:e.id,coldVol,totalCups,triggerCups,consumed:0,state:'idle',minsLeft:0,received:0};
+  });
+
+  // Ice Machine: starts with full bin (kg); depleted by servings + melting;
+  // produces ice to refill bin at max ICE_SPECS.maxKgHr, consuming water at ICE_SPECS.waterRatio L/kg
+  const iceEqs=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='icemachine');
+  const iceStates=iceEqs.map(e=>{
+    const cfg=eqCfg[e.id];
+    const binKg=cfg.binKg||20;
+    return {id:e.id,binKg,standbyLhr:cfg.standbyLhr||0.5,binLvl:binKg,drinks:cfg.drinks};
   });
 
   // Pre-compute which equipment draws from which tank source
@@ -959,21 +995,11 @@ function runSim(){
       if(wtLvl>=wtStopLvl) wtRefilling=false;
     }
 
-    // Filter Brewer: brewing (6 min delay) → filling (RO refills cold water)
-    let filterRefilling=false;
-    let filterDem=0;
+    // Filter Brewer pass 1: state transitions & cup consumption
     filterStates.forEach(fs=>{
       if(fs.state==='brewing'){
         fs.minsLeft--;
-        if(fs.minsLeft<=0){
-          fs.state='filling';
-          fs.minsLeft=ppm>0?Math.max(1,Math.ceil(fs.coldVol/ppm)):1;
-        }
-      } else if(fs.state==='filling'){
-        filterRefilling=true;
-        filterDem+=ppm;
-        fs.minsLeft--;
-        if(fs.minsLeft<=0){fs.state='idle';fs.consumed=0;}
+        if(fs.minsLeft<=0){fs.state='filling';fs.received=0;}
       }
       const cupsThisMin=tl[fs.id]?.[m]||0;
       fs.consumed+=cupsThisMin;
@@ -982,9 +1008,23 @@ function runSim(){
         fs.minsLeft=6;
       }
     });
+    // Filters downstream of an RO Tank drain the tank buffer; others pull directly from RO machine
+    const filterDirectCount=filterStates.filter(fs=>fs.state==='filling'&&!roEqIds.includes(fs.id)).length;
+    const filterRefilling=filterDirectCount>0;
+
+    // Ice Machine pass 1: consumption from drinks + standby melting
+    iceStates.forEach(is=>{
+      let iceUsedKg=0;
+      is.drinks.forEach(dk=>{const key=is.id+'_'+dk.n;const cnt=tl[key]?.[m]||0;iceUsedKg+=(cnt*dk.g)/1000;});
+      const meltKgMin=(is.standbyLhr/ICE_SPECS.waterRatio)/60;
+      is.binLvl-=iceUsedKg+meltKgMin;
+      if(is.binLvl<0){defMin++;is.binLvl=0;}
+      is.needsWater=is.binLvl<is.binKg;
+    });
+    const iceDirectCount=iceStates.filter(is=>is.needsWater&&!roEqIds.includes(is.id)).length;
 
     // --- Spirit capacity: distribute ppm among all simultaneous refill demands ---
-    const spiritDemanders=(cafe&&cafeRefilling?1:0)+(rtUsable>0&&roRefilling?1:0)+(wtTotalVol>0&&wtRefilling?1:0)+(filterRefilling?1:0);
+    const spiritDemanders=(cafe&&cafeRefilling?1:0)+(rtUsable>0&&roRefilling?1:0)+(wtTotalVol>0&&wtRefilling?1:0)+filterDirectCount+iceDirectCount;
     const spiritShare=spiritDemanders>0?ppm/spiritDemanders:0;
     if(spiritDemanders>1) overloadMins++;
 
@@ -992,13 +1032,48 @@ function runSim(){
     if(rtUsable>0&&roRefilling){roLvl+=spiritShare;if(roLvl>rtUsable)roLvl=rtUsable;}
     if(wtTotalVol>0&&wtRefilling){wtLvl+=spiritShare;if(wtLvl>wtStopLvl)wtLvl=wtStopLvl;}
 
+    // Filter Brewer pass 2: allocate fill, route source (RO Tank buffer vs direct RO machine)
+    let filterDem=0;
+    filterStates.forEach(fs=>{
+      if(fs.state==='filling'){
+        let take=0;
+        if(roEqIds.includes(fs.id)){
+          take=Math.min(ppm,roLvl,fs.coldVol-fs.received);
+          roLvl-=take;
+        } else {
+          take=Math.min(spiritShare,fs.coldVol-fs.received);
+          filterDem+=take;
+        }
+        fs.received+=take;
+        if(fs.received>=fs.coldVol){fs.state='idle';fs.consumed=0;}
+      }
+    });
+
+    // Ice Machine pass 2: produce ice up to max rate, route water source (RO Tank buffer vs direct)
+    let iceDem=0;
+    iceStates.forEach(is=>{
+      if(!is.needsWater)return;
+      const deficitKg=is.binKg-is.binLvl;
+      const maxProdKgMin=ICE_SPECS.maxKgHr/60;
+      const waterNeeded=Math.min(deficitKg,maxProdKgMin)*ICE_SPECS.waterRatio;
+      let waterTake=0;
+      if(roEqIds.includes(is.id)){
+        waterTake=Math.min(waterNeeded,roLvl);
+        roLvl-=waterTake;
+      } else {
+        waterTake=Math.min(spiritShare,waterNeeded);
+        iceDem+=waterTake;
+      }
+      is.binLvl+=waterTake/ICE_SPECS.waterRatio;
+    });
+
     const spiritProduction=spiritDemanders>0?ppm:0;
-    demD.push((dem+filterDem)*1000);
+    demD.push((dem+filterDem+iceDem)*1000);
     prodD.push(spiritProduction*1000);
     roD.push(roLvl);
     cafeD.push(cafeLvl);
     wtD.push(wtLvl);
-    totalDem+=dem+filterDem;
+    totalDem+=dem+filterDem+iceDem;
   }
 
   const totalProd=ppm*60;
