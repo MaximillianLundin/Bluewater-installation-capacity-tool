@@ -1217,16 +1217,14 @@ function showAuth(msg){
   if(msg){const el=document.getElementById('auth-msg');el.className='auth-err';el.textContent=msg;}
 }
 
+// AUTH TEMPORARILY DISABLED — re-enable when bluewatergroup.com domain is verified in Resend
 sb.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_IN'&&session?.user) showApp(session.user);
-  else if(event==='SIGNED_OUT') showAuth();
 });
-
-// On load: restore session from localStorage automatically
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session?.user) showApp(session.user);
-  else showAuth();
-});
+document.getElementById('auth-screen').style.display='none';
+document.getElementById('app-container').style.display='block';
+document.getElementById('user-bar').style.display='none';
+renderFlow();
 
 // ================================================================
 // SAVED CONFIGS
