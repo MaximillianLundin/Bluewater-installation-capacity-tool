@@ -339,12 +339,12 @@ const CAT = {
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
   seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
   rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
-  watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Floatswitch: på vid 20%, av vid 95%',isWT:true},
+  watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
   cafestation:{c:'Storage & Treatment',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
   mineraliser:{c:'Storage & Treatment',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
   espresso:{c:'Equipment',l:'Espresso Machine',s:'Espresso / Tea / Americano',isEq:true,et:'espresso'},
   filter:{c:'Equipment',l:'Filter Brewer',s:'Batch brew',isEq:true,et:'filter'},
-  hotwater:{c:'Equipment',l:'Hot Water Tank',s:'300ml default draw',isEq:true,et:'hotwater'},
+  hotwater:{c:'Equipment',l:'Hot Water Tank (Pour over, Chemex)',s:'300ml default draw',isEq:true,et:'hotwater'},
   coldwater:{c:'Equipment',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
   bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'}
 };
@@ -412,8 +412,9 @@ function rPath(path,pid,showNums){
       h+=`<div class="yfork">`;
       const b0pid=`${pid}-0-${nd.id}`,b1pid=`${pid}-1-${nd.id}`;
       const b0ins=nd.br[0].some(n=>n.ct!=='select'),b1ins=nd.br[1].some(n=>n.ct!=='select');
-      h+=`<div class="ybr"><div class="yconn ytop${b0ins?' yclk':''}" ${b0ins?`onclick="lnClick('${b0pid}',0)"`:''}}>${b0ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[0],b0pid,showNums)}</div>`;
-      h+=`<div class="ybr"><div class="yconn ybot${b1ins?' yclk':''}" ${b1ins?`onclick="lnClick('${b1pid}',0)"`:''}}>${b1ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[1],b1pid,showNums)}</div>`;
+      const b0empty=nd.br[0].length===0,b1empty=nd.br[1].length===0;
+      if(!b0empty){const vc=b1empty?'':' ytop';h+=`<div class="ybr"><div class="yconn${vc}${b0ins?' yclk':''}" ${b0ins?`onclick="lnClick('${b0pid}',0)"`:''}}>${b0ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[0],b0pid,showNums)}</div>`;}
+      if(!b1empty){const vc=b0empty?'':' ybot';h+=`<div class="ybr"><div class="yconn${vc}${b1ins?' yclk':''}" ${b1ins?`onclick="lnClick('${b1pid}',0)"`:''}}>${b1ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[1],b1pid,showNums)}</div>`; }
       h+=`</div>`;
     } else if(nd.isCV){
       h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
@@ -524,28 +525,28 @@ function insN(pid,idx,key){
   renderFlow();cm();
 }
 
-function rtModalBody(){return`<div style="margin-bottom:12px"><label>Tankstorlek</label><select id="rtvol" onchange="calcRTUsable()"><option value="2">2 L</option><option value="4">4 L</option><option value="12" selected>12 L</option><option value="20">20 L</option></select></div><div style="margin-bottom:12px"><label>Förladdningstryck</label><select id="rtpc" onchange="calcRTUsable()"><option value="0.5" selected>0.5 bar (rekommenderat)</option><option value="1.0">1.0 bar</option><option value="1.5">1.5 bar</option><option value="2.0">2.0 bar</option><option value="2.5">2.5 bar</option></select></div><p id="rt-info" style="font-size:13px;color:#4A6AF5;font-weight:600;margin-bottom:12px">Lagrat: 10.0 L · Användbart (85%): 8.5 L</p>`}
+function rtModalBody(){return`<div style="margin-bottom:12px"><label>Tank size</label><select id="rtvol" onchange="calcRTUsable()"><option value="2">2 L</option><option value="4">4 L</option><option value="12" selected>12 L</option><option value="20">20 L</option></select></div><div style="margin-bottom:12px"><label>Pre-charge pressure</label><select id="rtpc" onchange="calcRTUsable()"><option value="0.5" selected>0.5 bar (recommended)</option><option value="1.0">1.0 bar</option><option value="1.5">1.5 bar</option><option value="2.0">2.0 bar</option><option value="2.5">2.5 bar</option></select></div><p id="rt-info" style="font-size:13px;color:#4A6AF5;font-weight:600;margin-bottom:12px">Stored: 10.0 L · Usable (85%): 8.5 L</p>`}
 function addRT(pid,idx){sm(`<h3>RO Tank</h3>${rtModalBody()}<div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 function insRT(pid,idx){sm(`<h3>RO Tank</h3>${rtModalBody()}<div class="ma"><button class="bp bsm" onclick="doRT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 
-function calcRTUsable(){const v=parseFloat(document.getElementById('rtvol').value)||12;const pc=parseFloat(document.getElementById('rtpc').value)||0.5;const stored=v*(1-pc/3);const usable=stored*0.85;document.getElementById('rt-info').textContent='Lagrat: '+stored.toFixed(1)+' L · Användbart (85%): '+usable.toFixed(1)+' L'}
+function calcRTUsable(){const v=parseFloat(document.getElementById('rtvol').value)||12;const pc=parseFloat(document.getElementById('rtpc').value)||0.5;const stored=v*(1-pc/3);const usable=stored*0.85;document.getElementById('rt-info').textContent='Stored: '+stored.toFixed(1)+' L · Usable (85%): '+usable.toFixed(1)+' L'}
 function doRT(pid,idx){
   const vol=parseFloat(document.getElementById('rtvol').value)||12;
   const pc=parseFloat(document.getElementById('rtpc').value)||0.5;
   const stored=+(vol*(1-pc/3)).toFixed(2);
   const usable=+(stored*0.85).toFixed(2);
   const p=resP(pid);
-  p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+vol+'L)',s:stored.toFixed(1)+'L lagrat / '+usable.toFixed(1)+'L användbart',vol:vol,precharge:pc,volStored:stored,volUsable:usable,isEq:false,isCV:false,isY:false});
+  p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+vol+'L)',s:stored.toFixed(1)+'L stored / '+usable.toFixed(1)+'L usable',vol:vol,precharge:pc,volStored:stored,volUsable:usable,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
-function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar RO-maskinen vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
-function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Floatswitch aktiverar RO-maskinen vid 20% kvar, stänger av vid 95% full.</p><div style="margin-bottom:12px"><label>Volym (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 function doWT(pid,idx){
   const vol=parseFloat(document.getElementById('wtv').value)||10;
   const trigger=+(vol*0.20).toFixed(1);
   const stopAt=+(vol*0.95).toFixed(1);
   const p=resP(pid);
-  p.splice(idx,0,{id:gid(),ct:'watertank',l:'Water Tank ('+vol+'L)',s:'På vid '+trigger+'L · Av vid '+stopAt+'L',vol:vol,wtTrigger:trigger,wtStop:stopAt,isEq:false,isCV:false,isY:false});
+  p.splice(idx,0,{id:gid(),ct:'watertank',l:'Water Tank ('+vol+'L)',s:'On at '+trigger+'L · Off at '+stopAt+'L',vol:vol,wtTrigger:trigger,wtStop:stopAt,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
 
@@ -649,8 +650,10 @@ function renderEq(){
       d='Configure drink volumes:';
       x='<div class="dt">'+c.drinks.map((dk,i)=>`<div class="db"><label>${dk.n}</label><input type="number" value="${imp?mlV(dk.ml):dk.ml}" onfocus="this.select()" onchange="uDk('${eq.id}',${i},this.value)"> ${mlU()}</div>`).join('')+'</div>';
     } else if(c.t==='filter'){
-      const cups=Math.floor(c.vol/200);
-      d=`<div style="margin-top:6px"><label>Volume of brew tank (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uFlt('${eq.id}',this.value)"><div class="note" style="margin-top:4px">${cups} koppar per batch (à 200ml). Påfyllning triggas när sista koppen går åt.</div></div>`;
+      const hotVol=Math.round(c.vol*(4000/4500));
+      const cups=Math.max(1,Math.floor(hotVol/200));
+      const triggerAt=Math.max(1,cups-2);
+      d=`<div style="margin-top:6px"><label>Cold water volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uFlt('${eq.id}',this.value)"><div class="note" style="margin-top:4px">${cups} cups per batch (at 200ml each). Brew cycle triggered after cup ${triggerAt} — 6 min brew, then RO refills ${imp?mlV(c.vol)+' '+mlU():c.vol+'ml'} cold water.</div></div>`;
     } else if(c.t==='hotwater'){
       d=`<div style="margin-top:6px"><label>Presumed draw volume (${mlU()})</label><input type="number" value="${imp?mlV(c.vol):c.vol}" style="width:120px" onfocus="this.select()" onchange="uVol('${eq.id}',this.value)"></div>`;
     } else if(c.t==='coldwater'){
@@ -682,7 +685,7 @@ function getTLRows(){
         rows.push({type:'drink',label:'  '+dk.n+' ('+dk.ml+(imp?' '+mlU():'ml')+')',id:key,ml:dk.ml,eqId:eq.id,drink:dk.n});
       });
     } else if(c.t==='filter'){
-      rows.push({type:'eq',label:eq.l+' (koppar à 200ml)',id:eq.id,ml:200,noGMT:true,eqId:eq.id});
+      rows.push({type:'eq',label:eq.l+' (cups à 200ml)',id:eq.id,ml:200,noGMT:true,eqId:eq.id});
     } else {
       rows.push({type:'eq',label:eq.l,id:eq.id,ml:c.vol,eqId:eq.id});
     }
@@ -811,18 +814,19 @@ function fillR(){
   colEq(mainPath).forEach(eq=>{
     const c=eqCfg[eq.id];if(!c)return;
     if(c.t==='espresso'){
-      const dk=c.drinks[0];const key=eq.id+'_'+dk.n;
-      [0,1,2,3,5,7,8,10,12,14,15,17,19,20,22,24,25,27,28,30,32,33,35,37,38,40,42,44,45,47,48,50,52,54,55,57,58].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
-      [0,5,10,15,20,25,30,35,40,45,50,55].forEach(m=>{tl[key][m]=(tl[key][m]||0)+1});
+      c.drinks.forEach(dk=>{
+        const key=eq.id+'_'+dk.n;if(!tl[key])tl[key]={};
+        if(dk.n==='Espresso'){for(let m=0;m<60;m++)tl[key][m]=1;}
+        else if(dk.n==='Tea'){for(let m=0;m<60;m+=5)tl[key][m]=1;}
+        else if(dk.n==='Americano'){for(let m=0;m<60;m+=7)tl[key][m]=1;}
+      });
     } else if(c.t==='filter'){
-      // Busy: ~1 cup every 4 min
-      for(let m=4;m<60;m+=4)tl[eq.id][m]=(tl[eq.id][m]||0)+1;
-    } else if(c.t==='coldwater'){
-      [2,5,8,12,18,22,28,32,38,42,48,52,58].forEach(m=>{tl[eq.id][m]=1});
-    } else if(c.t==='bottles'){
-      [3,7,11,16,21,26,31,36,41,46,51,56].forEach(m=>{tl[eq.id][m]=1});
+      for(let m=0;m<60;m+=2)tl[eq.id][m]=1;
     } else if(c.t==='hotwater'){
-      [0,20,40].forEach(m=>{tl[eq.id][m]=1});
+      for(let m=0;m<60;m+=12)tl[eq.id][m]=1;
+    } else if(c.t==='coldwater'){
+      for(let m=0;m<10;m++)tl[eq.id][m]=1;
+      for(let m=40;m<50;m++)tl[eq.id][m]=1;
     }
   });
   buildTL();
@@ -833,17 +837,18 @@ function fillS(){
   colEq(mainPath).forEach(eq=>{
     const c=eqCfg[eq.id];if(!c)return;
     if(c.t==='espresso'){
-      const dk=c.drinks[0];const key=eq.id+'_'+dk.n;
-      for(let m=0;m<60;m+=3)tl[key][m]=1;
+      c.drinks.forEach(dk=>{
+        const key=eq.id+'_'+dk.n;if(!tl[key])tl[key]={};
+        if(dk.n==='Espresso'){for(let m=0;m<60;m+=3)tl[key][m]=1;}
+        else if(dk.n==='Tea'){for(let m=0;m<60;m+=10)tl[key][m]=1;}
+        else if(dk.n==='Americano'){for(let m=0;m<60;m+=20)tl[key][m]=1;}
+      });
     } else if(c.t==='filter'){
-      // Light: ~1 cup every 10 min
-      for(let m=10;m<60;m+=10)tl[eq.id][m]=1;
-    } else if(c.t==='coldwater'){
-      for(let m=2;m<60;m+=5)tl[eq.id][m]=1;
-    } else if(c.t==='bottles'){
-      for(let m=4;m<60;m+=8)tl[eq.id][m]=1;
+      for(let m=0;m<60;m+=5)tl[eq.id][m]=1;
     } else if(c.t==='hotwater'){
-      [0,30].forEach(m=>{tl[eq.id][m]=1});
+      for(let m=0;m<60;m+=30)tl[eq.id][m]=1;
+    } else if(c.t==='coldwater'){
+      for(let m=0;m<10;m++)tl[eq.id][m]=1;
     }
   });
   buildTL();
@@ -894,12 +899,15 @@ function runSim(){
   const wtTriggerLvl=wtTotalVol*0.20;
   const wtStopLvl=wtTotalVol*0.95;
 
-  // Filter Brewer: batch mode — starts full, refill when last cup consumed
+  // Filter Brewer: starts with full cold water tank; brew triggered at triggerCups;
+  // 6 min brew delay, then RO refills cold water volume
   const filterEqs=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='filter');
   const filterStates=filterEqs.map(e=>{
-    const vol=(eqCfg[e.id].vol||4500)/1000; // liters
-    const cups=Math.max(1,Math.floor((eqCfg[e.id].vol||4500)/200));
-    return {id:e.id,vol,cups,consumed:0,refilling:false,minsLeft:0};
+    const coldVol=(eqCfg[e.id].vol||4500)/1000;
+    const hotVol=coldVol*(4000/4500);
+    const totalCups=Math.max(1,Math.floor(hotVol*1000/200));
+    const triggerCups=Math.max(1,totalCups-2);
+    return {id:e.id,coldVol,totalCups,triggerCups,consumed:0,state:'idle',minsLeft:0};
   });
 
   // Pre-compute which equipment draws from which tank source
@@ -951,22 +959,27 @@ function runSim(){
       if(wtLvl>=wtStopLvl) wtRefilling=false;
     }
 
-    // Filter Brewer batch logic (determines filterRefilling flag)
+    // Filter Brewer: brewing (6 min delay) → filling (RO refills cold water)
     let filterRefilling=false;
     let filterDem=0;
     filterStates.forEach(fs=>{
-      if(fs.refilling){
-        filterRefilling=true;
-        filterDem+=fs.vol;
+      if(fs.state==='brewing'){
         fs.minsLeft--;
-        if(fs.minsLeft<=0){fs.refilling=false;fs.consumed=0}
+        if(fs.minsLeft<=0){
+          fs.state='filling';
+          fs.minsLeft=ppm>0?Math.max(1,Math.ceil(fs.coldVol/ppm)):1;
+        }
+      } else if(fs.state==='filling'){
+        filterRefilling=true;
+        filterDem+=ppm;
+        fs.minsLeft--;
+        if(fs.minsLeft<=0){fs.state='idle';fs.consumed=0;}
       }
       const cupsThisMin=tl[fs.id]?.[m]||0;
       fs.consumed+=cupsThisMin;
-      if(!fs.refilling&&fs.consumed>=fs.cups){
-        fs.refilling=true;
-        fs.minsLeft=Math.max(1,Math.ceil(fs.vol/ppm));
-        fs.consumed=0;
+      if(fs.state==='idle'&&fs.consumed>=fs.triggerCups){
+        fs.state='brewing';
+        fs.minsLeft=6;
       }
     });
 
