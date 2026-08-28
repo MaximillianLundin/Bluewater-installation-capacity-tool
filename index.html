@@ -70,7 +70,7 @@ button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weigh
 .byp-end:hover{background:#BFDBFE}
 .byp-end.lnk{border-style:solid;background:#BFDBFE;color:#1F3B8A}
 .fa{position:relative}
-.byp-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+.byp-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;z-index:5}
 
 /* Y-split: branches fork up and down, inline with flow */
 .yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
@@ -522,55 +522,94 @@ function bypLink(bid,jid){
   renderFlow();cm();
 }
 
-// Draw each linked bypass as a line: down from the open end, across, up to its J.
+// Orthogonal polyline with rounded corners. Collinear/duplicate points are
+// dropped first so a straight run never produces a zero-length arc.
+function orthPath(pts,r){
+  const p=pts.filter((q,i)=>i===0||Math.abs(q[0]-pts[i-1][0])>0.5||Math.abs(q[1]-pts[i-1][1])>0.5);
+  if(p.length<2) return '';
+  let d=`M ${p[0][0]} ${p[0][1]}`;
+  for(let i=1;i<p.length-1;i++){
+    const [px,py]=p[i-1],[cx,cy]=p[i],[nx,ny]=p[i+1];
+    const l1=Math.hypot(cx-px,cy-py), l2=Math.hypot(nx-cx,ny-cy);
+    if(!l1||!l2){d+=` L ${cx} ${cy}`;continue}
+    const rr=Math.min(r,l1/2,l2/2);
+    d+=` L ${cx-(cx-px)/l1*rr} ${cy-(cy-py)/l1*rr} Q ${cx} ${cy} ${cx+(nx-cx)/l2*rr} ${cy+(ny-cy)/l2*rr}`;
+  }
+  const e=p[p.length-1];
+  return d+` L ${e[0]} ${e[1]}`;
+}
+
+// Draw each linked bypass as one continuous pipe: down out of the end marker,
+// along a reserved lane beneath every row, then up into its junction.
 function drawByp(cid){
   const box=document.getElementById(cid);
   if(!box) return;
   box.querySelectorAll('.byp-svg').forEach(s=>s.remove());
+  box.style.paddingBottom='';
   const links=colByp(mainPath).filter(n=>n.linkTo&&findNd(mainPath,n.linkTo));
   if(!links.length) return;
   const br=box.getBoundingClientRect();
+  const ox=box.scrollLeft-br.left, oy=box.scrollTop-br.top;
+  const rct=e=>{const r=e.getBoundingClientRect();return{l:r.left+ox,r:r.right+ox,t:r.top+oy,b:r.bottom+oy,el:e}};
+  const solids=[...box.querySelectorAll('.fn,.fi,.byp-end')].filter(e=>e.offsetParent!==null).map(rct);
+  if(!solids.length) return;
+  const contentBottom=Math.max(...solids.map(q=>q.b));
+  const contentRight=Math.max(...solids.map(q=>q.r));
+  // Reserve room under the diagram for the lanes so they never sit on a row
+  box.style.paddingBottom=(30+links.length*14)+'px';
+
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.setAttribute('class','byp-svg');
-  svg.setAttribute('width',box.scrollWidth);
-  svg.setAttribute('height',box.scrollHeight);
+  svg.setAttribute('width',Math.max(box.scrollWidth,contentRight+30));
+  svg.setAttribute('height',contentBottom+30+links.length*14);
+  const stroke=(d,w,col,dash)=>{
+    const p=document.createElementNS(ns,'path');
+    p.setAttribute('d',d);p.setAttribute('fill','none');
+    p.setAttribute('stroke',col);p.setAttribute('stroke-width',w);
+    p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
+    if(dash)p.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(p);
+  };
   let drew=false;
-  links.forEach(n=>{
+  links.forEach((n,li)=>{
     const a=box.querySelector(`[data-byp="${n.id}"]`);
     const b=box.querySelector(`[data-j="${n.linkTo}"]`);
     if(!a||!b) return;
-    const ar=a.getBoundingClientRect(),brr=b.getBoundingClientRect();
-    const ox=box.scrollLeft-br.left, oy=box.scrollTop-br.top;
-    const x1=ar.right+ox, y1=ar.top+oy+ar.height/2;
-    const y2=brr.bottom+oy;
-    // Rise at the junction's centre, but if a component box sits in that column
-    // between the two rows, shift into the clear gap beside the junction instead.
-    const cands=[brr.left+ox+brr.width/2, brr.left+ox-9, brr.right+ox+9];
-    const boxes=[...box.querySelectorAll('.fn')].filter(e=>e.offsetParent!==null).map(e=>{
-      const r=e.getBoundingClientRect();
-      return {l:r.left+ox,r:r.right+ox,t:r.top+oy,b:r.bottom+oy};
-    });
-    const clear=x=>!boxes.some(q=>x>q.l-3&&x<q.r+3&&q.b>y2&&q.t<y1);
-    const rx=cands.find(clear)??cands[0];
-    const r=10, cy=Math.max(y2+6,y1-r);
-    const path=document.createElementNS(ns,'path');
-    path.setAttribute('d',`M ${x1} ${y1} H ${rx-r} Q ${rx} ${y1} ${rx} ${cy} V ${y2+5}`);
-    path.setAttribute('fill','none');
-    path.setAttribute('stroke','#2563EB');
-    path.setAttribute('stroke-width','3');
-    path.setAttribute('stroke-dasharray','7 6');
-    svg.appendChild(path);
-    const head=document.createElementNS(ns,'path');
-    head.setAttribute('d',`M ${rx-5} ${y2+10} L ${rx} ${y2+2} L ${rx+5} ${y2+10}`);
-    head.setAttribute('fill','none');
-    head.setAttribute('stroke','#2563EB');
-    head.setAttribute('stroke-width','3');
-    head.setAttribute('stroke-linecap','round');
-    svg.appendChild(head);
+    const A=rct(a), J=rct(b);
+    const laneY=contentBottom+16+li*14;
+    const sx=(A.l+A.r)/2, jcx=(J.l+J.r)/2, jMid=(J.t+J.b)/2;
+    // Scan outward from the junction for a column with no component in it
+    const blocks=solids.filter(q=>q.el!==a);
+    const clearCol=x=>!blocks.some(q=>x>q.l-5&&x<q.r+5&&q.b>J.b+1&&q.t<laneY-1);
+    let rx=null;
+    for(let d=0;d<=120&&rx===null;d+=3){
+      for(const c of (d===0?[jcx]:[jcx-d,jcx+d])){if(clearCol(c)){rx=c;break}}
+    }
+    // Nothing clear near the junction: go around the right edge and come in sideways
+    const around=rx===null;
+    if(around) rx=contentRight+18;
+    // Junction sits (near enough) straight above the end marker: rise directly.
+    // Detouring through the lane here would loop back up through the marker itself.
+    const overhead=!around&&rx>A.l-6&&rx<A.r+6&&J.b<A.t;
+    const pts=overhead
+      ? [[rx,A.t],[rx,J.b+8]]
+      : around
+      ? [[sx,A.b],[sx,laneY],[rx,laneY],[rx,jMid],[J.r+8,jMid]]
+      : [[sx,A.b],[sx,laneY],[rx,laneY],[rx,J.b+8]];
+    const d=orthPath(pts,9);
+    if(!d) return;
+    const head=around
+      ? `M ${J.r+11} ${jMid-5} L ${J.r+3} ${jMid} L ${J.r+11} ${jMid+5}`
+      : `M ${rx-5} ${J.b+11} L ${rx} ${J.b+3} L ${rx+5} ${J.b+11}`;
+    // White halo first so the pipe stays readable where it crosses a connector
+    stroke(d,7,'#FFFFFF');
+    stroke(d,3,'#2563EB','7 6');
+    stroke(head,6,'#FFFFFF');
+    stroke(head,3,'#2563EB');
     drew=true;
   });
-  if(drew) box.appendChild(svg);
+  if(drew) box.appendChild(svg); else box.style.paddingBottom='';
 }
 
 function resP(pid){
@@ -1636,11 +1675,13 @@ window.addEventListener('beforeprint',()=>{
   faP.style.setProperty('overflow','visible','important');
   faP.style.setProperty('width','max-content','important');
   void faP.offsetWidth; // force reflow
-  const naturalW=Math.max(faP.scrollWidth,faP.offsetWidth,1);
-  const naturalH=Math.max(faP.scrollHeight,faP.offsetHeight,1);
   // Redraw bypass overlay here: page 2 is display:none until now, so the
   // render-time pass measured zeroes. This is the only moment it has layout.
+  // Must run BEFORE measuring — it reserves lane padding that changes height.
   drawByp('fa-print');
+  void faP.offsetWidth;
+  const naturalW=Math.max(faP.scrollWidth,faP.offsetWidth,1);
+  const naturalH=Math.max(faP.scrollHeight,faP.offsetHeight,1);
   faP.style.removeProperty('overflow');
   faP.style.removeProperty('width');
   p2.style.display='';
