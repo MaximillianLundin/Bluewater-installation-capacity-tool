@@ -57,7 +57,20 @@ button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weigh
 .fi{border-radius:4px;padding:3px 10px;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;transition:.15s}
 .fi.cv{background:#E8F5E9;border:1px solid var(--grn);color:var(--grn)}
 .fi.yc{background:#FFF3E0;border:1px solid var(--org);color:#B45309}
+.fi.sv{background:#FFF1F2;border:1px solid #BE123C;color:#BE123C}
+.fi.tc{background:#F4F4F5;border:1px solid #52525B;color:#27272A}
+.fi.jc{background:#BFDBFE;border:1px solid #2563EB;color:#1F3B8A}
 .fi:hover{opacity:.7}
+
+/* T-connector: main line runs straight through, branch drops down and right */
+.tfork .ybr:first-child .yconn::after{display:none}
+/* Bypass: dashed run past the system, ending in an open connector until linked */
+.byp .yconn::before{background:repeating-linear-gradient(90deg,#2563EB 0 7px,transparent 7px 13px)!important;height:3px}
+.byp-end{display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;font-size:10px;font-weight:700;color:#2563EB;border:1.5px dashed #2563EB;border-radius:4px;padding:3px 9px;background:var(--wh);white-space:nowrap}
+.byp-end:hover{background:#BFDBFE}
+.byp-end.lnk{border-style:solid;background:#BFDBFE;color:#1F3B8A}
+.fa{position:relative}
+.byp-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
 
 /* Y-split: branches fork up and down, inline with flow */
 .yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
@@ -146,6 +159,11 @@ table.tl{border-collapse:collapse;min-width:100%}
   .fl,.yconn::before,.yconn::after{background:#4A6AF5!important}
   .fn{border:2px solid #4A6AF5!important}
   .fn.eq{border-color:#666!important}
+  /* Bypass keeps its dashed run and open/linked end marker on paper */
+  .byp .yconn::before{background:repeating-linear-gradient(90deg,#2563EB 0 7px,transparent 7px 13px)!important}
+  .byp-end{display:flex!important;color:#1F3B8A!important;font-weight:700!important;border:1.5px dashed #2563EB!important}
+  .byp-end.lnk{background:#BFDBFE!important;border-style:solid!important}
+  .byp-svg{display:block!important}
 }
 
 #print-page2{display:none}
@@ -355,7 +373,11 @@ const CAT = {
   spirit:{c:'Purification',l:'Bluewater Spirit',s:'2.5 l/min (150 l/h) @15°C',fr:2.5,ro:true},
   pro600:{c:'Purification',l:'Bluewater PRO',s:'4.5 l/min (270 l/h) @15°C',fr:4.5,ro:true},
   yconnector:{c:'Flow Control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
+  tconnector:{c:'Flow Control',l:'T-Connector',s:'Branches flow down and right',isY:true,tt:'T'},
+  bypass:{c:'Flow Control',l:'Bypass Line',s:'Runs past the system, rejoins at a Junction',isY:true,tt:'B'},
+  junction:{c:'Flow Control',l:'Junction',s:'Where a bypass reconnects',isJ:true},
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
+  shutoff:{c:'Flow Control',l:'Shut-off Valve',s:'Turns flow on and off',isSV:true},
   seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
   rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
   watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
@@ -415,6 +437,8 @@ function renderFlow(){
   document.getElementById('fa').innerHTML=rPath(mainPath,'m',false);
   nodeNum=0;
   document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
+  // Overlay needs final layout, so draw after the browser has laid the nodes out
+  requestAnimationFrame(()=>{drawByp('fa');drawByp('fa-print')});
 }
 
 function rPath(path,pid,showNums){
@@ -429,17 +453,24 @@ function rPath(path,pid,showNums){
     if(nd.ct==='select'){
       h+=`<div class="fn sel" onclick="selClick('${pid}',${i})">+ Select</div>`;
     } else if(nd.isY){
-      h+=`<div class="fi yc" onclick="fiClick('${pid}',${i})">Y</div>`;
-      // T-split: inline fork, top branch up, bottom branch down
-      h+=`<div class="yfork">`;
+      const tt=nd.tt||'Y';
+      const bcls=tt==='T'?'tc':tt==='B'?'jc':'yc';
+      h+=`<div class="fi ${bcls}" onclick="fiClick('${pid}',${i})">${tt==='B'?'BP':tt}</div>`;
+      // Fork: branch 0 runs straight on (main line), branch 1 drops down and right.
+      // Y draws a vertical stub on both; T and Bypass keep the main line flat (.tfork).
+      h+=`<div class="yfork${tt==='Y'?'':' tfork'}${tt==='B'?' byp':''}">`;
       const b0pid=`${pid}-0-${nd.id}`,b1pid=`${pid}-1-${nd.id}`;
       const b0ins=nd.br[0].some(n=>n.ct!=='select'),b1ins=nd.br[1].some(n=>n.ct!=='select');
       const b0empty=nd.br[0].length===0,b1empty=nd.br[1].length===0;
       if(!b0empty){const vc=b1empty?'':' ytop';h+=`<div class="ybr"><div class="yconn${vc}${b0ins?' yclk':''}" ${b0ins?`onclick="lnClick('${b0pid}',0)"`:''}}>${b0ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[0],b0pid,showNums)}</div>`;}
-      if(!b1empty){const vc=b0empty?'':' ybot';h+=`<div class="ybr"><div class="yconn${vc}${b1ins?' yclk':''}" ${b1ins?`onclick="lnClick('${b1pid}',0)"`:''}}>${b1ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[1],b1pid,showNums)}</div>`; }
+      if(!b1empty){const vc=b0empty?'':' ybot';h+=`<div class="ybr"><div class="yconn${vc}${b1ins?' yclk':''}" ${b1ins?`onclick="lnClick('${b1pid}',0)"`:''}}>${b1ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[1],b1pid,showNums)}${tt==='B'?bypEnd(nd):''}</div>`; }
       h+=`</div>`;
     } else if(nd.isCV){
       h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
+    } else if(nd.isSV){
+      h+=`<div class="fi sv" onclick="fiClick('${pid}',${i})">SV</div>`;
+    } else if(nd.isJ){
+      h+=`<div class="fi jc" data-j="${nd.id}" onclick="fiClick('${pid}',${i})">J</div>`;
     } else {
       const cls=nd.isEq?'eq':'src';
       const sub=nd.s?`<div class="ns">${nd.s}</div>`:'';
@@ -449,6 +480,97 @@ function rPath(path,pid,showNums){
   }
   h+='</div>';
   return h;
+}
+
+// ---- Bypass ------------------------------------------------------
+// The flow is a tree, so a bypass that rejoins can't be an edge in the data.
+// It's stored as linkTo on the bypass node and drawn as a measured overlay.
+function bypEnd(nd){
+  const j=nd.linkTo?findNd(mainPath,nd.linkTo):null;
+  if(j) return `<div class="byp-end lnk" data-byp="${nd.id}" onclick="bypPick('${nd.id}')">↱ rejoins J</div>`;
+  return `<div class="byp-end" data-byp="${nd.id}" onclick="bypPick('${nd.id}')">connect →</div>`;
+}
+function findNd(p,id){
+  for(const n of p){
+    if(n.id===id) return n;
+    if(n.isY&&n.br){for(const b of n.br){const f=findNd(b,id);if(f)return f}}
+  }
+  return null;
+}
+function colJ(p){let t=[];p.forEach(n=>{if(n.isJ)t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colJ(b))})});return t}
+function colByp(p){let t=[];p.forEach(n=>{if(n.tt==='B')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colByp(b))})});return t}
+
+function bypPick(bid){
+  const js=colJ(mainPath);
+  const nd=findNd(mainPath,bid);
+  let h='<h3>Reconnect bypass</h3>';
+  if(!js.length){
+    h+='<p>No Junction in the diagram yet. Add a <strong>Junction</strong> to the main line where the bypass should rejoin, then come back here.</p>';
+  } else {
+    h+='<p>Pick the junction where this bypass rejoins the flow.</p>';
+    js.forEach((j,n)=>{
+      const sel=nd&&nd.linkTo===j.id?' style="border-color:#2563EB;background:#BFDBFE"':'';
+      h+=`<div class="mbt"${sel} onclick="bypLink('${bid}','${j.id}')"><strong>Junction ${n+1}</strong></div>`;
+    });
+  }
+  h+=`<div style="margin-top:12px;display:flex;gap:8px">${nd&&nd.linkTo?`<button class="bd bsm" style="flex:1" onclick="bypLink('${bid}','')">Disconnect</button>`:''}<button class="bs bsm" style="flex:1" onclick="cm()">Cancel</button></div>`;
+  sm(h);
+}
+function bypLink(bid,jid){
+  const nd=findNd(mainPath,bid);
+  if(nd) nd.linkTo=jid||null;
+  renderFlow();cm();
+}
+
+// Draw each linked bypass as a line: down from the open end, across, up to its J.
+function drawByp(cid){
+  const box=document.getElementById(cid);
+  if(!box) return;
+  box.querySelectorAll('.byp-svg').forEach(s=>s.remove());
+  const links=colByp(mainPath).filter(n=>n.linkTo&&findNd(mainPath,n.linkTo));
+  if(!links.length) return;
+  const br=box.getBoundingClientRect();
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('class','byp-svg');
+  svg.setAttribute('width',box.scrollWidth);
+  svg.setAttribute('height',box.scrollHeight);
+  let drew=false;
+  links.forEach(n=>{
+    const a=box.querySelector(`[data-byp="${n.id}"]`);
+    const b=box.querySelector(`[data-j="${n.linkTo}"]`);
+    if(!a||!b) return;
+    const ar=a.getBoundingClientRect(),brr=b.getBoundingClientRect();
+    const ox=box.scrollLeft-br.left, oy=box.scrollTop-br.top;
+    const x1=ar.right+ox, y1=ar.top+oy+ar.height/2;
+    const y2=brr.bottom+oy;
+    // Rise at the junction's centre, but if a component box sits in that column
+    // between the two rows, shift into the clear gap beside the junction instead.
+    const cands=[brr.left+ox+brr.width/2, brr.left+ox-9, brr.right+ox+9];
+    const boxes=[...box.querySelectorAll('.fn')].filter(e=>e.offsetParent!==null).map(e=>{
+      const r=e.getBoundingClientRect();
+      return {l:r.left+ox,r:r.right+ox,t:r.top+oy,b:r.bottom+oy};
+    });
+    const clear=x=>!boxes.some(q=>x>q.l-3&&x<q.r+3&&q.b>y2&&q.t<y1);
+    const rx=cands.find(clear)??cands[0];
+    const r=10, cy=Math.max(y2+6,y1-r);
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',`M ${x1} ${y1} H ${rx-r} Q ${rx} ${y1} ${rx} ${cy} V ${y2+5}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#2563EB');
+    path.setAttribute('stroke-width','3');
+    path.setAttribute('stroke-dasharray','7 6');
+    svg.appendChild(path);
+    const head=document.createElementNS(ns,'path');
+    head.setAttribute('d',`M ${rx-5} ${y2+10} L ${rx} ${y2+2} L ${rx+5} ${y2+10}`);
+    head.setAttribute('fill','none');
+    head.setAttribute('stroke','#2563EB');
+    head.setAttribute('stroke-width','3');
+    head.setAttribute('stroke-linecap','round');
+    svg.appendChild(head);
+    drew=true;
+  });
+  if(drew) box.appendChild(svg);
 }
 
 function resP(pid){
@@ -573,7 +695,10 @@ function doWT(pid,idx){
 }
 
 function mkNd(key,c){
-  const nd={id:gid(),ct:key,l:c.l,s:c.s,isEq:!!c.isEq,isCV:!!c.isCV,isY:!!c.isY,fr:c.fr||0,ro:!!c.ro};
+  const nd={id:gid(),ct:key,l:c.l,s:c.s,isEq:!!c.isEq,isCV:!!c.isCV,isY:!!c.isY,isSV:!!c.isSV,isJ:!!c.isJ,fr:c.fr||0,ro:!!c.ro};
+  if(c.tt) nd.tt=c.tt;
+  // Bypass branch stays unlinked until a Junction is picked
+  if(c.tt==='B') nd.linkTo=null;
   if(c.isY){nd.br=[[{id:gid(),ct:'select'}],[{id:gid(),ct:'select'}]]}
   if(c.isEq){
     if(!eqN[c.et])eqN[c.et]=0;eqN[c.et]++;
@@ -612,17 +737,23 @@ function ndClick(pid,idx){
 
 function fiClick(pid,idx){
   const p=resP(pid);const nd=p[idx];
-  sm(`<h3>${nd.isCV?'Checkvalve':'Y-Connector'}</h3><div class="ma"><button class="bd" onclick="rmNd('${pid}',${idx})">Remove</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`);
+  const ttl=nd.isCV?'Checkvalve':nd.isSV?'Shut-off Valve':nd.isJ?'Junction':nd.tt==='T'?'T-Connector':nd.tt==='B'?'Bypass Line':'Y-Connector';
+  let extra='';
+  if(nd.tt==='B') extra=`<button class="bs" onclick="bypPick('${nd.id}')">${nd.linkTo?'Change junction':'Connect to junction'}</button>`;
+  if(nd.isJ&&colByp(mainPath).some(b=>b.linkTo===nd.id)) extra='<p>A bypass currently rejoins here. Removing this junction leaves that bypass unconnected.</p>';
+  sm(`<h3>${ttl}</h3>${extra}<div class="ma"><button class="bd" onclick="rmNd('${pid}',${idx})">Remove</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`);
 }
 
 function rmNd(pid,idx){
   const p=resP(pid);const nd=p[idx];
   if(nd.isEq){delete eqCfg[nd.id];delete tl[nd.id]}
   if(nd.isY&&nd.br)nd.br.forEach(b=>clnBr(b));
+  // Dropping a junction must not leave bypasses pointing at a node that's gone
+  if(nd.isJ)colByp(mainPath).forEach(b=>{if(b.linkTo===nd.id)b.linkTo=null});
   p.splice(idx,1);ensSel(p);renderFlow();cm();
 }
 
-function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}if(n.isY&&n.br)n.br.forEach(b=>clnBr(b))})}
+function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}if(n.isJ)colByp(mainPath).forEach(b=>{if(b.linkTo===n.id)b.linkTo=null});if(n.isY&&n.br)n.br.forEach(b=>clnBr(b))})}
 
 // ================================================================
 // COLLECT
@@ -1507,6 +1638,9 @@ window.addEventListener('beforeprint',()=>{
   void faP.offsetWidth; // force reflow
   const naturalW=Math.max(faP.scrollWidth,faP.offsetWidth,1);
   const naturalH=Math.max(faP.scrollHeight,faP.offsetHeight,1);
+  // Redraw bypass overlay here: page 2 is display:none until now, so the
+  // render-time pass measured zeroes. This is the only moment it has layout.
+  drawByp('fa-print');
   faP.style.removeProperty('overflow');
   faP.style.removeProperty('width');
   p2.style.display='';
