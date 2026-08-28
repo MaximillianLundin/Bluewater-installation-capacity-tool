@@ -7,7 +7,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bw:#4A6AF5;--bwl:#EEF1FE;--bwd:#2D4AD0;--blk:#1A1A1A;--gr:#F7F7F8;--gm:#D1D5DB;--wh:#FFF;--red:#D32F2F;--grn:#2E7D32;--org:#F59E0B;--r:10px}
+/* Bluewater palette — Gray scale + Blue/Rose/Green secondaries per brand guidelines */
+:root{
+  --g900:#18181B;--g800:#27272A;--g700:#3F3F46;--g600:#52525B;--g500:#71717A;
+  --g400:#A1A1AA;--g300:#D4D4D8;--g200:#E4E4E7;--g100:#F4F4F5;--g50:#FAFAFA;
+  --bw:#2563EB;--bwd:#1D4ED8;--bwl:#EFF6FF;--bw2:#BFDBFE;
+  --blk:#18181B;--gr:#FAFAFA;--gm:#D4D4D8;--wh:#FFF;
+  --red:#BE123C;--grn:#14803D;--org:#EB590D;
+  --r:10px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:var(--gr);color:var(--blk);line-height:1.5}
 
@@ -22,7 +29,7 @@ header{background:var(--wh);padding:14px 32px;display:flex;align-items:center;ga
 
 .ctn{max-width:1400px;margin:0 auto;padding:20px 32px}
 h2{font-size:17px;font-weight:700;margin-bottom:14px}
-.sec{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.sec{background:var(--wh);border:1px solid var(--g200);border-radius:var(--r);padding:26px 28px;margin-bottom:20px;box-shadow:0 1px 2px rgba(24,24,27,.04)}
 .note{font-size:12px;color:var(--blk);font-weight:500;font-style:italic}
 label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--blk)}
 select,input[type="number"],textarea{width:100%;padding:8px 12px;border:1px solid var(--gm);border-radius:8px;font-size:14px;background:var(--wh);transition:.15s;font-family:inherit}
@@ -31,56 +38,76 @@ textarea{resize:vertical;min-height:80px}
 
 button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
 .bp{background:var(--bw);color:#fff}.bp:hover{background:var(--bwd)}
-.bs{background:var(--gr);color:var(--blk);border:1px solid var(--gm)}.bs:hover{background:#ECECEC}
+.bs{background:var(--wh);color:var(--g800);border:1px solid var(--g300)}.bs:hover{background:var(--g100);border-color:var(--g400)}
 .bd{background:transparent;color:var(--red);border:1px solid var(--red);padding:4px 14px;font-size:12px;border-radius:24px}
 .bsm{padding:5px 14px;font-size:12px}
 .hidden{display:none!important}
 
 .snav{display:flex;gap:8px;margin-bottom:20px}
 .sb{padding:8px 24px;border:2px solid var(--gm);border-radius:24px;background:var(--wh);font-weight:600;font-size:14px;cursor:pointer;color:var(--blk);transition:.15s}
-.sb.act{border-color:var(--bw);color:var(--bw);background:var(--bwl)}
+.sb.act{border-color:var(--bw);color:#fff;background:var(--bw)}
 
-/* FLOW */
-.fa{background:var(--gr);border-radius:8px;padding:24px;margin-top:10px;overflow:auto;min-height:120px}
-.fr{display:flex;align-items:center;gap:0;flex-wrap:nowrap}
-.fn{background:var(--wh);border:2px solid var(--bw);border-radius:8px;padding:8px 14px;text-align:center;font-size:12px;font-weight:600;min-width:100px;white-space:nowrap;flex-shrink:0;cursor:pointer;transition:.15s;position:relative}
-.fn:hover{box-shadow:0 2px 8px rgba(74,106,245,.2)}
-.fn.src{background:var(--bwl)}
-.fn.eq{border-color:#666}
-.fn.sel{border-style:dashed;color:var(--bw);background:#FAFAFA;min-width:90px}
-.fn.sel:hover{background:var(--bwl)}
-.fn .ns{font-size:10px;font-weight:600;color:var(--blk);margin-top:2px}
-.fn .nnum{position:absolute;top:-10px;left:-10px;width:22px;height:22px;background:var(--bw);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
-.fl{width:36px;height:3px;background:var(--bw);flex-shrink:0;cursor:pointer;position:relative;transition:.15s}
-.fl:hover{height:5px;margin-top:-1px;background:var(--bwd)}
-.fl .ll{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--bw);white-space:nowrap;font-weight:600}
-.fi{border-radius:4px;padding:3px 10px;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;transition:.15s}
-.fi.cv{background:#E8F5E9;border:1px solid var(--grn);color:var(--grn)}
-.fi.yc{background:#FFF3E0;border:1px solid var(--org);color:#B45309}
-.fi.sv{background:#FFF1F2;border:1px solid #BE123C;color:#BE123C}
-.fi.tc{background:#F4F4F5;border:1px solid #52525B;color:#27272A}
-.fi.jc{background:#BFDBFE;border:1px solid #2563EB;color:#1F3B8A}
-.fi:hover{opacity:.7}
+/* FLOW — single SVG canvas, geometry computed in layoutFlow() */
+.fa{background:var(--gr);border-radius:var(--r);padding:4px;margin-top:12px;overflow:auto;min-height:120px;border:1px solid var(--g200)}
+svg.flow{display:block;max-width:none}
+svg.flow text{font-family:inherit;dominant-baseline:auto;text-anchor:middle;pointer-events:none;user-select:none}
 
-/* T-connector: main line runs straight through, branch drops down and right */
-.tfork .ybr:first-child .yconn::after{display:none}
-/* Bypass: dashed run past the system, ending in an open connector until linked */
-.byp .yconn::before{background:repeating-linear-gradient(90deg,#2563EB 0 7px,transparent 7px 13px)!important;height:3px}
-.byp-end{display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;font-size:10px;font-weight:700;color:#2563EB;border:1.5px dashed #2563EB;border-radius:4px;padding:3px 9px;background:var(--wh);white-space:nowrap}
-.byp-end:hover{background:#BFDBFE}
-.byp-end.lnk{border-style:solid;background:#BFDBFE;color:#1F3B8A}
-.fa{position:relative}
-.byp-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;z-index:5}
+/* component boxes */
+.nbx{cursor:pointer}
+.nbx rect{fill:var(--wh);stroke:var(--g300);stroke-width:1.5;transition:.15s}
+.nbx:hover rect{stroke:var(--bw);filter:drop-shadow(0 2px 6px rgba(37,99,235,.18))}
+.nbx .nl{font-size:12.5px;font-weight:700;fill:var(--g900)}
+.nbx .ns{font-size:10.5px;font-weight:500;fill:var(--g600)}
+.nbx.src rect{fill:var(--g100);stroke:var(--g800);stroke-width:2}
+.nbx.ro rect{stroke:var(--bw);stroke-width:2}
+.nbx.eq rect{stroke:var(--g800);stroke-width:2}
+.nnum{fill:var(--g900)}
+.nnumt{font-size:10px;font-weight:700;fill:#fff}
 
-/* Y-split: branches fork up and down, inline with flow */
-.yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
-.ybr{display:flex;align-items:center;gap:0;padding:4px 0}
-.yconn{width:20px;flex-shrink:0;align-self:stretch;position:relative}
-.yconn::before{content:'';position:absolute;top:50%;left:0;right:0;height:3px;background:var(--bw)}
-.yconn.ytop::after{content:'';position:absolute;top:50%;bottom:0;left:0;width:3px;background:var(--bw)}
-.yconn.ybot::after{content:'';position:absolute;bottom:50%;top:0;left:0;width:3px;background:var(--bw)}
-.yconn.yclk{cursor:pointer;width:54px}.yconn.yclk:hover::before{height:5px;background:var(--bwd)}
-.yll{position:absolute;top:calc(50% - 16px);left:50%;transform:translateX(-50%);font-size:9px;color:var(--bw);white-space:nowrap;font-weight:600}
+/* add-a-part slot */
+.nsel{cursor:pointer}
+.nsel rect{fill:none;stroke:var(--g400);stroke-width:1.5;stroke-dasharray:5 4;transition:.15s}
+.nsel text{font-size:11.5px;font-weight:600;fill:var(--g500)}
+.nsel:hover rect{stroke:var(--bw);fill:var(--bwl)}
+.nsel:hover text{fill:var(--bw)}
+
+/* inline fittings */
+.bdg{cursor:pointer}
+.bdg rect{stroke-width:1.5;transition:.15s}
+.bdg text{font-size:10px;font-weight:700}
+.bdg:hover rect{filter:drop-shadow(0 2px 5px rgba(0,0,0,.16))}
+.bdg.cv rect{fill:#DCFCE7;stroke:#14803D}   .bdg.cv text{fill:#14542E}
+.bdg.sv rect{fill:#FFF1F2;stroke:#BE123C}   .bdg.sv text{fill:#881337}
+.bdg.tc rect{fill:var(--g100);stroke:var(--g600)} .bdg.tc text{fill:var(--g900)}
+.bdg.yc rect{fill:var(--g100);stroke:var(--g600)} .bdg.yc text{fill:var(--g900)}
+.bdg.jc rect{fill:var(--bw2);stroke:var(--bw)} .bdg.jc text{fill:#1F3B8A}
+.bdg.bp rect{fill:var(--bw2);stroke:var(--bw)} .bdg.bp text{fill:#1F3B8A}
+
+/* connectors — the "+" only appears on hover, no permanent click labels */
+.eg{cursor:pointer}
+.eg-ln{fill:none;stroke:var(--g400);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.eg-hit{fill:none;stroke:transparent;stroke-width:16}
+.eg-add{opacity:0;transition:.15s;pointer-events:none}
+.eg-add circle{fill:var(--bw)}
+.eg-add path{stroke:#fff;stroke-width:2;stroke-linecap:round}
+.eg:hover .eg-ln{stroke:var(--bw)}
+.eg:hover .eg-add{opacity:1}
+
+/* bypass run */
+.byp-halo{fill:none;stroke:var(--gr);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+.byp-ln{fill:none;stroke:var(--bw);stroke-width:2.5;stroke-dasharray:7 6;stroke-linecap:round;stroke-linejoin:round}
+.byp-hd{fill:none;stroke:var(--bw);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.bend{cursor:pointer}
+.bend rect{fill:var(--wh);stroke:var(--bw);stroke-width:1.5;stroke-dasharray:5 4}
+.bend text{font-size:9.5px;font-weight:700;fill:var(--bw)}
+.bend.on rect{fill:var(--bw2);stroke-dasharray:none}
+.bend.on text{fill:#1F3B8A}
+.bend:hover rect{fill:var(--bwl)}
+
+/* legend */
+.lgd{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11px;color:var(--g600)}
+.lgd span{display:flex;align-items:center;gap:5px;font-weight:500}
+.lgd b{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:19px;border-radius:5px;font-size:9.5px;font-weight:700;border:1.5px solid}
 
 /* EQUIP */
 .eqi{background:var(--gr);border-radius:8px;padding:14px;margin-bottom:10px}
@@ -105,22 +132,22 @@ table.tl{border-collapse:collapse;min-width:100%}
 .tl td.c.a{background:var(--bw);color:#fff;font-weight:700;font-size:10px}
 .tl td.c.a:hover{background:var(--bwd)}
 .tl td.c.foc{outline:2px solid var(--bwd);outline-offset:-2px}
-.tl tr.totr td{background:#FFF8E1;font-weight:600;font-size:10px}
-.tl tr.totr td.el{background:#FFF8E1}
+.tl tr.totr td{background:#FFEDD5;font-weight:600;font-size:10px}
+.tl tr.totr td.el{background:#FFEDD5}
 
-.tls{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:16px 20px;margin-top:16px}
+.tls{background:var(--wh);border:1px solid var(--g200);border-radius:var(--r);padding:16px 20px;margin-top:16px}
 .tls h3{font-size:14px;font-weight:700;margin-bottom:10px}
 .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.si{display:flex;justify-content:space-between;padding:8px 12px;background:var(--gr);border-radius:6px;font-size:13px}
+.si{display:flex;justify-content:space-between;padding:9px 12px;background:var(--g50);border:1px solid var(--g200);border-radius:6px;font-size:13px}
 .si .sin{font-weight:600}.si .siv{color:var(--bw);font-weight:700}
 
 .cc{position:relative;height:400px;margin-top:16px}
 .rs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
-.rc{padding:16px;border-radius:var(--r);text-align:center}
-.rc.ok{background:#E8F5E9;border:1px solid var(--grn)}
-.rc.wa{background:#FFF8E1;border:1px solid var(--org)}
-.rc.cr{background:#FFEBEE;border:1px solid var(--red)}
-.rc .rv{font-size:28px;font-weight:700}.rc .rl{font-size:13px;color:var(--blk);font-weight:500;margin-top:4px}
+.rc{padding:18px 20px;border-radius:var(--r);text-align:left;background:var(--wh);border:1px solid var(--g200);border-left-width:4px}
+.rc.ok{border-left-color:var(--grn)} .rc.ok .rv{color:var(--grn)}
+.rc.wa{border-left-color:var(--org)} .rc.wa .rv{color:var(--org)}
+.rc.cr{border-left-color:var(--red)} .rc.cr .rv{color:var(--red)}
+.rc .rv{font-size:30px;font-weight:800;letter-spacing:-.5px}.rc .rl{font-size:12.5px;color:var(--g600);font-weight:500;margin-top:2px}
 
 /* MODAL */
 .mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
@@ -129,45 +156,42 @@ table.tl{border-collapse:collapse;min-width:100%}
 .mb p{font-size:13px;color:var(--blk);font-weight:500;margin-bottom:8px}
 .ma{display:flex;gap:8px;flex-wrap:wrap}
 .ma button{flex:1;min-width:80px}
-.mcat{font-size:11px;font-weight:700;color:var(--blk);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-top:8px;border-top:1px solid #EEE}
+.mcat{font-size:11px;font-weight:700;color:var(--blk);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--g200)}
 .mcat:first-child{border-top:none;margin-top:0;padding-top:0}
-.mbt{display:block;width:100%;text-align:left;padding:8px 14px;margin-bottom:4px;border:1px solid #E5E7EB;border-radius:8px;background:var(--wh);font-size:13px;font-weight:500;cursor:pointer;transition:.1s}
+.mbt{display:block;width:100%;text-align:left;padding:8px 14px;margin-bottom:4px;border:1px solid var(--g200);border-radius:8px;background:var(--wh);font-size:13px;font-weight:500;cursor:pointer;transition:.1s}
 .mbt:hover{background:var(--bwl);border-color:var(--bw)}
 .mbt .ms{font-size:11px;color:var(--blk);font-weight:500}
 .specline{font-size:13px;color:var(--blk);font-weight:500;padding:3px 0}
 
 @page{size:A4 landscape;margin:15mm}
 @media print{
-  header{position:static;border-bottom:2px solid var(--bw)}
+  header{position:static;border-bottom:2px solid var(--g900)}
   .snav,.bs,.bp,.bd,.bsm,.utog,.user-bar,button{display:none!important}
   #print-meta{display:flex!important;margin-left:auto;flex-direction:column;align-items:flex-end;gap:2px}
   body{background:#fff;font-size:11px;font-weight:500;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  h2,h3,strong,th,.fn,.rc .rv,.rc .rl,.si .sin,.si .siv{font-weight:800!important;color:#000!important}
+  h2,h3,strong,th,.rc .rv,.rc .rl,.si .sin,.si .siv{font-weight:800!important;color:#000!important}
   td,p,span,label,div,.note,.cfg-meta,.cfg-dates,.specline,.tool-t,.sb,.mbt,.mcat{font-weight:500!important;color:#000!important}
-  .sec{box-shadow:none;border:1px solid #ddd}
+  .sec{box-shadow:none;border:1px solid var(--g300)}
   .ctn{padding:10px 0}
   /* Page 1: Results */
   #step-4{display:block!important}
   #step-1,#step-2,#step-3,#step-5{display:none!important}
   /* Page 2: Flow + Notes */
   #print-page2{display:block!important;page-break-before:always}
-  #print-page2 .fa{transform-origin:top left;overflow:visible}
-  .fn.sel{display:none}
-  .fl .ll{display:none}
-  .fn .nnum{display:flex}
-  /* Force connector lines to print */
-  .fl,.yconn::before,.yconn::after{background:#4A6AF5!important}
-  .fn{border:2px solid #4A6AF5!important}
-  .fn.eq{border-color:#666!important}
-  /* Bypass keeps its dashed run and open/linked end marker on paper */
-  .byp .yconn::before{background:repeating-linear-gradient(90deg,#2563EB 0 7px,transparent 7px 13px)!important}
-  .byp-end{display:flex!important;color:#1F3B8A!important;font-weight:700!important;border:1.5px dashed #2563EB!important}
-  .byp-end.lnk{background:#BFDBFE!important;border-style:solid!important}
-  .byp-svg{display:block!important}
+  #print-page2 .fa{overflow:visible;background:#fff;border:none;padding:0}
+  /* The SVG carries its own geometry, so viewBox does the fitting -- no zoom hack */
+  svg.flow-p{width:100%!important;height:auto!important;max-height:150mm}
+  svg.flow-p .nsel,svg.flow-p .eg-add{display:none}
+  svg.flow-p .eg-ln{stroke:#000!important;stroke-width:2!important}
+  svg.flow-p .nbx rect{stroke:#000!important;stroke-width:2!important;fill:#fff!important}
+  svg.flow-p .nbx.src rect{fill:var(--g100)!important}
+  svg.flow-p .nl,svg.flow-p .ns{fill:#000!important}
+  svg.flow-p .bdg rect{stroke:#000!important} svg.flow-p .bdg text{fill:#000!important}
+  svg.flow-p .byp-halo{stroke:#fff!important}
+  .lgd{color:#000!important}
 }
 
 #print-page2{display:none}
-.fn .nnum{display:none}
 
 /* SAVED CONFIGS */
 .save-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
@@ -189,7 +213,7 @@ table.tl{border-collapse:collapse;min-width:100%}
 
 /* AUTH */
 #auth-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
-.auth-box{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.auth-box{background:var(--wh);border:1px solid var(--g200);border-radius:var(--r);padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .auth-box h2{margin-bottom:6px}
 .auth-box p{font-size:13px;color:var(--blk);font-weight:500;margin-bottom:20px}
 .auth-box input[type="email"]{margin-bottom:12px}
@@ -205,7 +229,7 @@ table.tl{border-collapse:collapse;min-width:100%}
 .admin-email{font-weight:600;font-size:14px}
 .admin-meta{font-size:12px;color:var(--blk);font-weight:500}
 .admin-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px}
-.admin-badge.bad{background:#FFEBEE;color:var(--red);border:1px solid var(--red)}
+.admin-badge.bad{background:#FFF1F2;color:var(--red);border:1px solid var(--red)}
 .admin-badge.self{background:var(--bwl);color:var(--bw);border:1px solid var(--bw)}
 </style>
 </head>
@@ -228,7 +252,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   </div>
   <div id="print-meta">
     <div style="font-size:13px;font-weight:700;color:var(--blk)" id="pm-project"></div>
-    <div style="font-size:12px;color:#666" id="pm-owner"></div>
+    <div style="font-size:12px;color:var(--g600)" id="pm-owner"></div>
   </div>
 </header>
 
@@ -243,7 +267,7 @@ table.tl{border-collapse:collapse;min-width:100%}
     </div>
     <div id="auth-sent" class="hidden">
       <p style="color:var(--grn);font-weight:600;margin-bottom:8px">Link sent! Check your inbox.</p>
-      <p style="font-size:13px;color:#888">Click the link in the email to sign in.</p>
+      <p style="font-size:13px;color:var(--g500)">Click the link in the email to sign in.</p>
       <button class="bs bsm" style="margin-top:16px" onclick="resetAuthForm()">Try a different email</button>
     </div>
     <div id="auth-msg"></div>
@@ -263,8 +287,16 @@ table.tl{border-collapse:collapse;min-width:100%}
   <div id="step-1">
     <div class="sec">
       <h2>Water Flow Diagram</h2>
-      <div class="note">Click "+ Select" to add components. Click boxes to see specs/remove. Click lines to insert. Click CV/Y to remove.</div>
+      <div class="note">Click <strong>+ Add part</strong> to extend the flow. Hover a line and click the <strong>+</strong> to insert between parts. Click any box or fitting to see specs or remove it.</div>
       <div id="fa" class="fa"></div>
+      <div class="lgd">
+        <span><b style="background:#F4F4F5;border-color:#52525B;color:#18181B">T</b> T-connector</span>
+        <span><b style="background:#F4F4F5;border-color:#52525B;color:#18181B">Y</b> Y-connector</span>
+        <span><b style="background:#BFDBFE;border-color:#2563EB;color:#1F3B8A">BP</b> Bypass line</span>
+        <span><b style="background:#BFDBFE;border-color:#2563EB;color:#1F3B8A">J</b> Junction</span>
+        <span><b style="background:#DCFCE7;border-color:#14803D;color:#14542E">CV</b> Checkvalve</span>
+        <span><b style="background:#FFF1F2;border-color:#BE123C;color:#881337">SV</b> Shut-off valve</span>
+      </div>
       <div style="margin-top:16px">
         <label>Installation Notes (for plumber)</label>
         <textarea id="plumber-notes" placeholder="Write notes about the installation here..."></textarea>
@@ -277,7 +309,7 @@ table.tl{border-collapse:collapse;min-width:100%}
       <h2>Equipment Configuration</h2>
       <div class="note" style="margin-bottom:12px">Configure equipment from your flow diagram.</div>
       <div id="eql"></div>
-      <div id="eqe" style="color:#999;font-size:13px;padding:12px">No equipment yet. Add in Step 1.</div>
+      <div id="eqe" style="color:var(--g500);font-size:13px;padding:12px">No equipment yet. Add in Step 1.</div>
     </div>
   </div>
 
@@ -327,7 +359,7 @@ table.tl{border-collapse:collapse;min-width:100%}
         <button class="bp" onclick="saveCfg()">Save Configuration</button>
       </div>
       <div class="cfg-list" id="cfg-list">
-        <div style="color:#999;font-size:13px;padding:12px">Loading saved configurations...</div>
+        <div style="color:var(--g500);font-size:13px;padding:12px">Loading saved configurations...</div>
       </div>
     </div>
   </div>
@@ -431,65 +463,203 @@ function renumberEq(){
     nd.l=base+' '+counts[nd.et];
   });
 }
+// ================================================================
+// FLOW LAYOUT
+// Data -> geometry in one deterministic pass, before anything is drawn.
+// Every node gets a (col, lane) grid cell, so edges are computed rather than
+// measured off the DOM. Risers run in the gutters between columns, which are
+// clear by construction -- no collision scanning, no overlay, no zoom hack.
+// ================================================================
+const LY={colGap:44,laneGap:30,rowH:50,badgeW:40,badgeH:28,selW:104,selH:34,padX:28,padY:26,minW:118};
+
+let _mctx=null;
+function txtW(s,weight,size){
+  if(!_mctx)_mctx=document.createElement('canvas').getContext('2d');
+  _mctx.font=weight+' '+size+"px -apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif";
+  return _mctx.measureText(s||'').width;
+}
+function ndSize(nd){
+  if(nd.ct==='select') return {w:LY.selW,h:LY.selH,kind:'sel'};
+  if(nd.isCV||nd.isSV||nd.isJ||nd.isY) return {w:LY.badgeW,h:LY.badgeH,kind:'badge'};
+  const w=Math.max(LY.minW,Math.ceil(Math.max(txtW(nd.l,'700',12.5),txtW(nd.s,'500',10.5)))+30);
+  return {w,h:nd.s?48:34,kind:'node'};
+}
+
+// Walk the tree assigning cells. Returns the last column the path occupied.
+function layoutFlow(){
+  const cells=[],edges=[];
+  let maxLane=0;
+  function walk(path,pid,col,lane){
+    let c=col,last=col-1;
+    for(let i=0;i<path.length;i++){
+      const nd=path[i];
+      // the trailing select after a branch node floats in empty space
+      if(nd.ct==='select'&&i>0&&path[i-1].isY) continue;
+      const sz=ndSize(nd);
+      cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind});
+      if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i});
+      last=c;
+      if(nd.isY&&nd.br){
+        const bl=++maxLane;                       // reserve the drop lane first
+        const p0=pid+'-0-'+nd.id, p1=pid+'-1-'+nd.id;
+        if(nd.br[0].length){
+          edges.push({kind:'seg',c0:c,l0:lane,c1:c+1,l1:lane,pid:p0,idx:0});
+          last=Math.max(last,walk(nd.br[0],p0,c+1,lane));
+        }
+        if(nd.br[1].length){
+          edges.push({kind:'drop',c0:c,l0:lane,c1:c+1,l1:bl,pid:p1,idx:0});
+          const e1=walk(nd.br[1],p1,c+1,bl);
+          last=Math.max(last,e1);
+          if(nd.tt==='B') cells.push({nd,pid,idx:i,col:e1+1,lane:bl,w:76,h:26,kind:'bypend'});
+          if(nd.tt==='B') last=Math.max(last,e1+1);
+        }
+        return last;                              // a branch node terminates its path
+      }
+      c++;
+    }
+    return last;
+  }
+  walk(mainPath,'m',0,0);
+
+  // column widths / lane centres
+  const colW=[],nCols=Math.max(...cells.map(c=>c.col))+1;
+  for(let i=0;i<nCols;i++) colW[i]=Math.max(...cells.filter(c=>c.col===i).map(c=>c.w),0)||LY.minW;
+  const colX=[];let x=LY.padX;
+  for(let i=0;i<nCols;i++){colX[i]=x;x+=colW[i]+LY.colGap}
+  const laneY=l=>LY.padY+l*(LY.rowH+LY.laneGap)+LY.rowH/2;
+  cells.forEach(c=>{
+    c.x=colX[c.col]+(colW[c.col]-c.w)/2;
+    c.cy=laneY(c.lane);
+    c.y=c.cy-c.h/2;
+  });
+  const at=(col,lane)=>cells.find(c=>c.col===col&&c.lane===lane);
+  const W=x-LY.colGap+LY.padX;
+  const laneCount=maxLane+1;
+
+  // Bypass edges: run in a reserved lane under the diagram, rise in a gutter.
+  const byps=[];
+  colByp(mainPath).forEach((n,i)=>{
+    if(!n.linkTo) return;
+    const end=cells.find(c=>c.kind==='bypend'&&c.nd===n);
+    const jc=cells.find(c=>c.nd.id===n.linkTo);
+    if(!end||!jc) return;
+    byps.push({end,jc,lane:i});
+  });
+  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+(byps.length?byps.length*16+14:0);
+  byps.forEach(b=>{
+    b.y=LY.padY+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+12+b.lane*16;
+    // rise in the gutter left of the junction's column: no node is ever there
+    b.rx=colX[b.jc.col]-LY.colGap/2;
+  });
+
+  return {cells,edges,byps,colX,colW,W,H,at,laneY};
+}
+
+// ---- SVG rendering ----------------------------------------------
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function orth(pts,r){
+  const p=pts.filter((q,i)=>i===0||Math.abs(q[0]-pts[i-1][0])>0.5||Math.abs(q[1]-pts[i-1][1])>0.5);
+  if(p.length<2) return '';
+  let d='M '+p[0][0]+' '+p[0][1];
+  for(let i=1;i<p.length-1;i++){
+    const [px,py]=p[i-1],[cx,cy]=p[i],[nx,ny]=p[i+1];
+    const l1=Math.hypot(cx-px,cy-py),l2=Math.hypot(nx-cx,ny-cy);
+    if(!l1||!l2){d+=' L '+cx+' '+cy;continue}
+    const rr=Math.min(r,l1/2,l2/2);
+    d+=' L '+(cx-(cx-px)/l1*rr)+' '+(cy-(cy-py)/l1*rr)+' Q '+cx+' '+cy+' '+(cx+(nx-cx)/l2*rr)+' '+(cy+(ny-cy)/l2*rr);
+  }
+  const e=p[p.length-1];
+  return d+' L '+e[0]+' '+e[1];
+}
+
+const BADGE={cv:['Checkvalve','CV'],sv:['Shut-off Valve','SV'],jc:['Junction','J'],tc:['T-Connector','T'],yc:['Y-Connector','Y']};
+function badgeOf(nd){
+  if(nd.isCV) return 'cv';
+  if(nd.isSV) return 'sv';
+  if(nd.isJ) return 'jc';
+  if(nd.tt==='T') return 'tc';
+  if(nd.tt==='B') return 'bp';
+  return 'yc';
+}
+
+function svgFlow(L,forPrint){
+  const num={n:0};
+  let s='<svg class="flow'+(forPrint?' flow-p':'')+'" viewBox="0 0 '+Math.round(L.W)+' '+Math.round(L.H)+'" width="'+Math.round(L.W)+'" height="'+Math.round(L.H)+'" xmlns="http://www.w3.org/2000/svg">';
+
+  // edges first so nodes sit on top
+  L.edges.forEach(e=>{
+    const a=L.at(e.c0,e.l0),b=L.at(e.c1,e.l1);
+    if(!a||!b) return;
+    let d,mx,my;
+    if(e.kind==='drop'){
+      d=orth([[a.x+a.w/2,a.y+a.h],[a.x+a.w/2,b.cy],[b.x,b.cy]],10);
+      mx=a.x+a.w/2;my=(a.y+a.h+b.cy)/2;
+    } else {
+      d=orth([[a.x+a.w,a.cy],[b.x,b.cy]],0);
+      mx=(a.x+a.w+b.x)/2;my=a.cy;
+    }
+    s+='<g class="eg" onclick="lnClick(\''+e.pid+'\','+e.idx+')">'
+      +'<path class="eg-hit" d="'+d+'"/><path class="eg-ln" d="'+d+'"/>'
+      +'<g class="eg-add" transform="translate('+mx+','+my+')"><circle r="9"/>'
+      +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
+  });
+
+  // bypass runs
+  L.byps.forEach(b=>{
+    const j=b.jc;
+    const d=orth([[b.end.x+b.end.w/2,b.end.y+b.end.h],[b.end.x+b.end.w/2,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]],10);
+    s+='<path class="byp-halo" d="'+d+'"/><path class="byp-ln" d="'+d+'"/>'
+      +'<path class="byp-hd" d="M '+(j.x-9)+' '+(j.cy-5)+' L '+(j.x-2)+' '+j.cy+' L '+(j.x-9)+' '+(j.cy+5)+'"/>';
+  });
+
+  // nodes
+  L.cells.forEach(c=>{
+    const nd=c.nd,x=c.x,y=c.y;
+    if(c.kind==='bypend'){
+      const on=!!nd.linkTo;
+      s+='<g class="bend'+(on?' on':'')+'" onclick="bypPick(\''+nd.id+'\')">'
+        +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="6"/>'
+        +'<text x="'+(x+c.w/2)+'" y="'+(c.cy+3.5)+'">'+(on?'rejoins J':'connect →')+'</text></g>';
+      return;
+    }
+    if(c.kind==='sel'){
+      s+='<g class="nsel" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
+        +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="8"/>'
+        +'<text x="'+(x+c.w/2)+'" y="'+(c.cy+4)+'">+ Add part</text></g>';
+      return;
+    }
+    if(c.kind==='badge'){
+      const k=badgeOf(nd);
+      s+='<g class="bdg '+k+'" onclick="fiClick(\''+c.pid+'\','+c.idx+')">'
+        +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="6"/>'
+        +'<text x="'+(x+c.w/2)+'" y="'+(c.cy+3.8)+'">'+(k==='bp'?'BP':BADGE[k][1])+'</text></g>';
+      return;
+    }
+    const cls=nd.fx?'src':nd.isEq?'eq':nd.ro?'ro':'nrm';
+    s+='<g class="nbx '+cls+'" onclick="ndClick(\''+c.pid+'\','+c.idx+')">'
+      +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="9"/>';
+    if(forPrint&&nd.ct!=='select'){
+      s+='<circle class="nnum" cx="'+(x+1)+'" cy="'+(y+1)+'" r="10"/>'
+        +'<text class="nnumt" x="'+(x+1)+'" y="'+(y+4.5)+'">'+(++num.n)+'</text>';
+    }
+    if(nd.s){
+      s+='<text class="nl" x="'+(x+c.w/2)+'" y="'+(c.cy-3)+'">'+esc(nd.l)+'</text>'
+        +'<text class="ns" x="'+(x+c.w/2)+'" y="'+(c.cy+13)+'">'+esc(nd.s)+'</text>';
+    } else {
+      s+='<text class="nl" x="'+(x+c.w/2)+'" y="'+(c.cy+4.5)+'">'+esc(nd.l)+'</text>';
+    }
+    s+='</g>';
+  });
+  return s+'</svg>';
+}
+
 function renderFlow(){
   renumberEq();
-  nodeNum=0;
-  document.getElementById('fa').innerHTML=rPath(mainPath,'m',false);
-  nodeNum=0;
-  document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
-  // Overlay needs final layout, so draw after the browser has laid the nodes out
-  requestAnimationFrame(()=>{drawByp('fa');drawByp('fa-print')});
+  const L=layoutFlow();
+  document.getElementById('fa').innerHTML=svgFlow(L,false);
+  document.getElementById('fa-print').innerHTML=svgFlow(L,true);
 }
 
-function rPath(path,pid,showNums){
-  let h='<div class="fr">';
-  for(let i=0;i<path.length;i++){
-    const nd=path[i];
-    const prevIsY=i>0&&path[i-1].isY;
-    // Skip the trailing select (and its connector) that appears after a Y-node — it floats in empty space
-    if(nd.ct==='select'&&prevIsY) continue;
-    if(i>0) h+=`<div class="fl" onclick="lnClick('${pid}',${i})"><div class="ll">click</div></div>`;
-
-    if(nd.ct==='select'){
-      h+=`<div class="fn sel" onclick="selClick('${pid}',${i})">+ Select</div>`;
-    } else if(nd.isY){
-      const tt=nd.tt||'Y';
-      const bcls=tt==='T'?'tc':tt==='B'?'jc':'yc';
-      h+=`<div class="fi ${bcls}" onclick="fiClick('${pid}',${i})">${tt==='B'?'BP':tt}</div>`;
-      // Fork: branch 0 runs straight on (main line), branch 1 drops down and right.
-      // Y draws a vertical stub on both; T and Bypass keep the main line flat (.tfork).
-      h+=`<div class="yfork${tt==='Y'?'':' tfork'}${tt==='B'?' byp':''}">`;
-      const b0pid=`${pid}-0-${nd.id}`,b1pid=`${pid}-1-${nd.id}`;
-      const b0ins=nd.br[0].some(n=>n.ct!=='select'),b1ins=nd.br[1].some(n=>n.ct!=='select');
-      const b0empty=nd.br[0].length===0,b1empty=nd.br[1].length===0;
-      if(!b0empty){const vc=b1empty?'':' ytop';h+=`<div class="ybr"><div class="yconn${vc}${b0ins?' yclk':''}" ${b0ins?`onclick="lnClick('${b0pid}',0)"`:''}}>${b0ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[0],b0pid,showNums)}</div>`;}
-      if(!b1empty){const vc=b0empty?'':' ybot';h+=`<div class="ybr"><div class="yconn${vc}${b1ins?' yclk':''}" ${b1ins?`onclick="lnClick('${b1pid}',0)"`:''}}>${b1ins?'<span class="yll">click</span>':''}</div>${rPath(nd.br[1],b1pid,showNums)}${tt==='B'?bypEnd(nd):''}</div>`; }
-      h+=`</div>`;
-    } else if(nd.isCV){
-      h+=`<div class="fi cv" onclick="fiClick('${pid}',${i})">CV</div>`;
-    } else if(nd.isSV){
-      h+=`<div class="fi sv" onclick="fiClick('${pid}',${i})">SV</div>`;
-    } else if(nd.isJ){
-      h+=`<div class="fi jc" data-j="${nd.id}" onclick="fiClick('${pid}',${i})">J</div>`;
-    } else {
-      const cls=nd.isEq?'eq':'src';
-      const sub=nd.s?`<div class="ns">${nd.s}</div>`:'';
-      const num=showNums&&nd.ct!=='select'?`<div class="nnum">${++nodeNum}</div>`:'';
-      h+=`<div class="fn ${cls}" onclick="ndClick('${pid}',${i})">${num}${nd.l}${sub}</div>`;
-    }
-  }
-  h+='</div>';
-  return h;
-}
-
-// ---- Bypass ------------------------------------------------------
-// The flow is a tree, so a bypass that rejoins can't be an edge in the data.
-// It's stored as linkTo on the bypass node and drawn as a measured overlay.
-function bypEnd(nd){
-  const j=nd.linkTo?findNd(mainPath,nd.linkTo):null;
-  if(j) return `<div class="byp-end lnk" data-byp="${nd.id}" onclick="bypPick('${nd.id}')">↱ rejoins J</div>`;
-  return `<div class="byp-end" data-byp="${nd.id}" onclick="bypPick('${nd.id}')">connect →</div>`;
-}
 function findNd(p,id){
   for(const n of p){
     if(n.id===id) return n;
@@ -509,7 +679,7 @@ function bypPick(bid){
   } else {
     h+='<p>Pick the junction where this bypass rejoins the flow.</p>';
     js.forEach((j,n)=>{
-      const sel=nd&&nd.linkTo===j.id?' style="border-color:#2563EB;background:#BFDBFE"':'';
+      const sel=nd&&nd.linkTo===j.id?' style="border-color:var(--bw);background:var(--bwl)"':'';
       h+=`<div class="mbt"${sel} onclick="bypLink('${bid}','${j.id}')"><strong>Junction ${n+1}</strong></div>`;
     });
   }
@@ -520,96 +690,6 @@ function bypLink(bid,jid){
   const nd=findNd(mainPath,bid);
   if(nd) nd.linkTo=jid||null;
   renderFlow();cm();
-}
-
-// Orthogonal polyline with rounded corners. Collinear/duplicate points are
-// dropped first so a straight run never produces a zero-length arc.
-function orthPath(pts,r){
-  const p=pts.filter((q,i)=>i===0||Math.abs(q[0]-pts[i-1][0])>0.5||Math.abs(q[1]-pts[i-1][1])>0.5);
-  if(p.length<2) return '';
-  let d=`M ${p[0][0]} ${p[0][1]}`;
-  for(let i=1;i<p.length-1;i++){
-    const [px,py]=p[i-1],[cx,cy]=p[i],[nx,ny]=p[i+1];
-    const l1=Math.hypot(cx-px,cy-py), l2=Math.hypot(nx-cx,ny-cy);
-    if(!l1||!l2){d+=` L ${cx} ${cy}`;continue}
-    const rr=Math.min(r,l1/2,l2/2);
-    d+=` L ${cx-(cx-px)/l1*rr} ${cy-(cy-py)/l1*rr} Q ${cx} ${cy} ${cx+(nx-cx)/l2*rr} ${cy+(ny-cy)/l2*rr}`;
-  }
-  const e=p[p.length-1];
-  return d+` L ${e[0]} ${e[1]}`;
-}
-
-// Draw each linked bypass as one continuous pipe: down out of the end marker,
-// along a reserved lane beneath every row, then up into its junction.
-function drawByp(cid){
-  const box=document.getElementById(cid);
-  if(!box) return;
-  box.querySelectorAll('.byp-svg').forEach(s=>s.remove());
-  box.style.paddingBottom='';
-  const links=colByp(mainPath).filter(n=>n.linkTo&&findNd(mainPath,n.linkTo));
-  if(!links.length) return;
-  const br=box.getBoundingClientRect();
-  const ox=box.scrollLeft-br.left, oy=box.scrollTop-br.top;
-  const rct=e=>{const r=e.getBoundingClientRect();return{l:r.left+ox,r:r.right+ox,t:r.top+oy,b:r.bottom+oy,el:e}};
-  const solids=[...box.querySelectorAll('.fn,.fi,.byp-end')].filter(e=>e.offsetParent!==null).map(rct);
-  if(!solids.length) return;
-  const contentBottom=Math.max(...solids.map(q=>q.b));
-  const contentRight=Math.max(...solids.map(q=>q.r));
-  // Reserve room under the diagram for the lanes so they never sit on a row
-  box.style.paddingBottom=(30+links.length*14)+'px';
-
-  const ns='http://www.w3.org/2000/svg';
-  const svg=document.createElementNS(ns,'svg');
-  svg.setAttribute('class','byp-svg');
-  svg.setAttribute('width',Math.max(box.scrollWidth,contentRight+30));
-  svg.setAttribute('height',contentBottom+30+links.length*14);
-  const stroke=(d,w,col,dash)=>{
-    const p=document.createElementNS(ns,'path');
-    p.setAttribute('d',d);p.setAttribute('fill','none');
-    p.setAttribute('stroke',col);p.setAttribute('stroke-width',w);
-    p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
-    if(dash)p.setAttribute('stroke-dasharray',dash);
-    svg.appendChild(p);
-  };
-  let drew=false;
-  links.forEach((n,li)=>{
-    const a=box.querySelector(`[data-byp="${n.id}"]`);
-    const b=box.querySelector(`[data-j="${n.linkTo}"]`);
-    if(!a||!b) return;
-    const A=rct(a), J=rct(b);
-    const laneY=contentBottom+16+li*14;
-    const sx=(A.l+A.r)/2, jcx=(J.l+J.r)/2, jMid=(J.t+J.b)/2;
-    // Scan outward from the junction for a column with no component in it
-    const blocks=solids.filter(q=>q.el!==a);
-    const clearCol=x=>!blocks.some(q=>x>q.l-5&&x<q.r+5&&q.b>J.b+1&&q.t<laneY-1);
-    let rx=null;
-    for(let d=0;d<=120&&rx===null;d+=3){
-      for(const c of (d===0?[jcx]:[jcx-d,jcx+d])){if(clearCol(c)){rx=c;break}}
-    }
-    // Nothing clear near the junction: go around the right edge and come in sideways
-    const around=rx===null;
-    if(around) rx=contentRight+18;
-    // Junction sits (near enough) straight above the end marker: rise directly.
-    // Detouring through the lane here would loop back up through the marker itself.
-    const overhead=!around&&rx>A.l-6&&rx<A.r+6&&J.b<A.t;
-    const pts=overhead
-      ? [[rx,A.t],[rx,J.b+8]]
-      : around
-      ? [[sx,A.b],[sx,laneY],[rx,laneY],[rx,jMid],[J.r+8,jMid]]
-      : [[sx,A.b],[sx,laneY],[rx,laneY],[rx,J.b+8]];
-    const d=orthPath(pts,9);
-    if(!d) return;
-    const head=around
-      ? `M ${J.r+11} ${jMid-5} L ${J.r+3} ${jMid} L ${J.r+11} ${jMid+5}`
-      : `M ${rx-5} ${J.b+11} L ${rx} ${J.b+3} L ${rx+5} ${J.b+11}`;
-    // White halo first so the pipe stays readable where it crosses a connector
-    stroke(d,7,'#FFFFFF');
-    stroke(d,3,'#2563EB','7 6');
-    stroke(head,6,'#FFFFFF');
-    stroke(head,3,'#2563EB');
-    drew=true;
-  });
-  if(drew) box.appendChild(svg); else box.style.paddingBottom='';
 }
 
 function resP(pid){
@@ -722,8 +802,8 @@ function doRT(pid,idx){
   p.splice(idx,0,{id:gid(),ct:'rotank',l:'RO Tank ('+vol+'L)',s:stored.toFixed(1)+'L stored / '+usable.toFixed(1)+'L usable',vol:vol,precharge:pc,volStored:stored,volUsable:usable,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
-function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
-function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:#555;margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function addWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:var(--g600);margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Add</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function insWT(pid,idx){sm(`<h3>Water Tank w float switch</h3><p style="font-size:13px;color:var(--g600);margin-bottom:12px">Float switch activates the RO machine at 20% remaining, turns off at 95% full.</p><div style="margin-bottom:12px"><label>Volume (L)</label><input type="number" id="wtv" value="10" min="1" max="500" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doWT('${pid}',${idx})">Insert</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 function doWT(pid,idx){
   const vol=parseFloat(document.getElementById('wtv').value)||10;
   const trigger=+(vol*0.20).toFixed(1);
@@ -806,8 +886,8 @@ function buildPartsList(){
   let h='<h2 style="margin-bottom:10px">Parts List</h2><table style="width:100%;border-collapse:collapse;font-size:13px">';
   h+='<thead><tr style="background:#1A1A1A;color:#fff"><th style="text-align:left;padding:7px 10px">Component</th><th style="text-align:left;padding:7px 10px">Details</th></tr></thead><tbody>';
   nodes.forEach((n,i)=>{
-    const bg=i%2===0?'#F7F7F8':'#fff';
-    h+=`<tr style="background:${bg}"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #E5E7EB">${n.l}</td><td style="padding:6px 10px;font-weight:500;border-bottom:1px solid #E5E7EB">${n.s||''}</td></tr>`;
+    const bg=i%2===0?'var(--g50)':'#fff';
+    h+=`<tr style="background:${bg}"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid var(--g200)">${n.l}</td><td style="padding:6px 10px;font-weight:500;border-bottom:1px solid var(--g200)">${n.s||''}</td></tr>`;
   });
   h+='</tbody></table>';
   document.getElementById('parts-list').innerHTML=h;
@@ -901,7 +981,7 @@ function getTLRows(){
 function buildTL(){
   const rows=getTLRows();
   const t=document.getElementById('tlt');
-  if(!rows.length){t.innerHTML='<tr><td style="padding:20px;color:#999">No equipment. Go to Step 1.</td></tr>';document.getElementById('tls').innerHTML='';return}
+  if(!rows.length){t.innerHTML='<tr><td style="padding:20px;color:var(--g500)">No equipment. Go to Step 1.</td></tr>';document.getElementById('tls').innerHTML='';return}
 
   let h='<tr><th class="eh">Equipment</th>';
   for(let m=0;m<60;m++)h+=`<th>${m}</th>`;
@@ -1087,8 +1167,7 @@ function clrTL(){
 function runSim(){
   // Update print content
   document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
-  nodeNum=0;
-  document.getElementById('fa-print').innerHTML=rPath(mainPath,'m',true);
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(),true);
   buildPartsList();
 
   const ro=colRO(mainPath);
@@ -1307,7 +1386,7 @@ function runSim(){
   const tU=imp?'gal':'L';
   const ds=[];
   if(cafe)ds.push({label:'Cafe Station ('+tU+')',data:imp?cafeD.map(v=>lV(v)):cafeD,borderColor:'#4A6AF5',backgroundColor:'rgba(74,106,245,.15)',fill:true,tension:.3,borderWidth:2});
-  if(rtUsable>0)ds.push({label:'RO Tank ('+tU+')',data:imp?roD.map(v=>lV(v)):roD,borderColor:'#888',backgroundColor:'rgba(100,100,100,.1)',fill:true,tension:.3,borderWidth:2});
+  if(rtUsable>0)ds.push({label:'RO Tank ('+tU+')',data:imp?roD.map(v=>lV(v)):roD,borderColor:'#71717A',backgroundColor:'rgba(100,100,100,.1)',fill:true,tension:.3,borderWidth:2});
   if(wtTotalVol>0)ds.push({label:'Water Tank ('+tU+')',data:imp?wtD.map(v=>lV(v)):wtD,borderColor:'#2E7D32',backgroundColor:'rgba(46,125,50,.1)',fill:true,tension:.3,borderWidth:2});
 
   tCh=new Chart(document.getElementById('tc').getContext('2d'),{
@@ -1467,7 +1546,7 @@ async function loadCfgs(){
     .limit(50);
 
   if(error){el.innerHTML=`<div style="color:var(--red);padding:12px">Error loading: ${error.message}</div>`;return}
-  if(!data||!data.length){el.innerHTML='<div style="color:#999;font-size:13px;padding:12px">No saved configurations yet.</div>';return}
+  if(!data||!data.length){el.innerHTML='<div style="color:var(--g500);font-size:13px;padding:12px">No saved configurations yet.</div>';return}
 
   const fmt=ts=>{const d=new Date(ts);return d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})};
   el.innerHTML=data.map(c=>{
@@ -1530,13 +1609,13 @@ function toggleAdmin(){goTo(6);}
 
 async function loadAdminData(){
   const ul=document.getElementById('admin-users');
-  ul.innerHTML='<div style="color:#999;font-size:13px;padding:12px">Loading...</div>';
+  ul.innerHTML='<div style="color:var(--g500);font-size:13px;padding:12px">Loading...</div>';
   const [{data:users},{data:banned}]=await Promise.all([
     sb.from('app_users').select('*').order('last_seen',{ascending:false}),
     sb.from('banned_users').select('email')
   ]);
   const bannedSet=new Set((banned||[]).map(b=>b.email));
-  if(!users||!users.length){ul.innerHTML='<div style="color:#999;font-size:13px;padding:12px">No users have logged in yet.</div>';return}
+  if(!users||!users.length){ul.innerHTML='<div style="color:var(--g500);font-size:13px;padding:12px">No users have logged in yet.</div>';return}
   ul.innerHTML=users.map(u=>{
     const isBanned=bannedSet.has(u.email);
     const isSelf=u.email===ADMIN_EMAIL;
@@ -1567,83 +1646,6 @@ async function unbanUser(email){
   toast('Access restored for '+email);loadAdminData();
 }
 
-// ================================================================
-// PRINT POPUP
-// ================================================================
-function openPrintWindow(){
-  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const projectName=esc(document.getElementById('cfg-title').value||getCfgTitle());
-  const owner=esc(document.getElementById('cfg-creator').value.trim());
-  const notes=esc(document.getElementById('plumber-notes').value);
-  const now=new Date();
-  const date=now.toLocaleDateString('sv-SE')+' '+now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-  nodeNum=0;
-  const diagram=rPath(mainPath,'m',true);
-
-  const css=`
-    @page{size:A4 landscape;margin:10mm}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:#fff;color:#000}
-    .ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;padding-bottom:10px;border-bottom:2.5px solid #000}
-    .ph-l h1{font-size:22px;font-weight:800;color:#000}
-    .ph-l .sub{font-size:13px;font-weight:700;color:#000;margin-top:3px}
-    .ph-r{font-size:12px;font-weight:700;text-align:right;color:#000;line-height:1.8}
-    .fa{overflow:visible;padding:16px 0}
-    .fr{display:flex;align-items:center;flex-wrap:nowrap}
-    .fn{background:#fff;border:2.5px solid #000;border-radius:8px;padding:10px 18px;text-align:center;font-size:14px;font-weight:800;min-width:110px;white-space:nowrap;flex-shrink:0;position:relative;color:#000;pointer-events:none}
-    .fn.src{background:#f2f2f2}
-    .fn.sel{display:none}
-    .fn .ns{font-size:11px;font-weight:700;color:#000;margin-top:3px}
-    .fn .nnum{position:absolute;top:-12px;left:-12px;width:26px;height:26px;background:#000;color:#fff;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-    .fl{width:36px;height:3px;background:#000;flex-shrink:0;position:relative}
-    .fl .ll{display:none}
-    .fi{border-radius:4px;padding:4px 10px;font-size:11px;font-weight:800;flex-shrink:0;border:2px solid #000;color:#000;background:#fff;pointer-events:none}
-    .yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
-    .ybr{display:flex;align-items:center;padding:4px 0}
-    .yconn{width:20px;flex-shrink:0;align-self:stretch;position:relative}
-    .yconn::before{content:'';position:absolute;top:50%;left:0;right:0;height:3px;background:#000}
-    .yconn.ytop::after{content:'';position:absolute;top:50%;bottom:0;left:0;width:3px;background:#000}
-    .yconn.ybot::after{content:'';position:absolute;bottom:50%;top:0;left:0;width:3px;background:#000}
-    .yconn.yclk{width:54px}
-    .yll{display:none}
-    .notes{margin-top:20px;border-top:1.5px solid #000;padding-top:12px}
-    .notes h2{font-size:15px;font-weight:800;color:#000;margin-bottom:8px}
-    .notes-body{font-size:13px;font-weight:700;color:#000;white-space:pre-wrap;line-height:1.7;border:1.5px solid #000;padding:12px 14px;border-radius:8px}`;
-
-  const body=`
-    <div class="ph">
-      <div class="ph-l">
-        <h1>${projectName}</h1>
-        ${owner?`<div class="sub">Owner: ${owner}</div>`:''}
-      </div>
-      <div class="ph-r">
-        <div>Installation Flow Diagram</div>
-        <div>${date}</div>
-      </div>
-    </div>
-    <div class="fa" id="diag">${diagram}</div>
-    ${notes?`<div class="notes"><h2>Installation Notes</h2><div class="notes-body">${notes}</div></div>`:''}
-    <script>
-    window.addEventListener('load',function(){
-      var fa=document.getElementById('diag');
-      var fr=fa&&fa.querySelector('.fr');
-      if(fr){
-        var nw=Math.max(fr.scrollWidth,fr.offsetWidth)||1;
-        var nh=Math.max(fr.offsetHeight,1);
-        var tw=Math.round(277*96/25.4);
-        var th=Math.round(150*96/25.4);
-        var scale=Math.min(tw/nw,th/nh,2.5);
-        fa.style.zoom=Math.max(0.3,scale);
-      }
-      setTimeout(function(){window.print();},400);
-    });
-    <\/script>`;
-
-  const w=window.open('','_blank','width=1200,height=900');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+projectName+' — Flow Diagram</title><style>'+css+'</style></head><body>'+body+'</body></html>');
-  w.document.close();
-}
-
 // Show print orientation hint for Safari users
 (function(){
   const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -1662,41 +1664,9 @@ window.addEventListener('beforeprint',()=>{
   const owner=document.getElementById('cfg-creator').value.trim();
   document.getElementById('pm-project').textContent=title;
   document.getElementById('pm-owner').textContent=owner?'Owner: '+owner:'';
-
-  // Measure #fa-print with overflow removed so we get the true content width.
-  // Must use setProperty('important') to beat the .fa class rule overflow:auto.
-  const p2=document.getElementById('print-page2');
-  const faP=document.getElementById('fa-print');
-  p2.style.display='block';
-  p2.style.position='fixed';
-  p2.style.left='-9999px';
-  p2.style.top='0';
-  p2.style.visibility='hidden';
-  faP.style.setProperty('overflow','visible','important');
-  faP.style.setProperty('width','max-content','important');
-  void faP.offsetWidth; // force reflow
-  // Redraw bypass overlay here: page 2 is display:none until now, so the
-  // render-time pass measured zeroes. This is the only moment it has layout.
-  // Must run BEFORE measuring — it reserves lane padding that changes height.
-  drawByp('fa-print');
-  void faP.offsetWidth;
-  const naturalW=Math.max(faP.scrollWidth,faP.offsetWidth,1);
-  const naturalH=Math.max(faP.scrollHeight,faP.offsetHeight,1);
-  faP.style.removeProperty('overflow');
-  faP.style.removeProperty('width');
-  p2.style.display='';
-  p2.style.position='';
-  p2.style.left='';
-  p2.style.top='';
-  p2.style.visibility='';
-
-  // A4 landscape, 15mm margins → 267mm × 180mm content area
-  // Reserve ~55mm vertically for heading + notes
-  const pxPerMm=96/25.4;
-  const availW=Math.round(267*pxPerMm);  // ~1009px
-  const availH=Math.round(125*pxPerMm);  // ~473px for diagram area
-  const scale=Math.min(availW/naturalW,availH/naturalH,2.0);
-  faP.style.zoom=Math.max(0.3,scale);
+  // The flow is an SVG with a viewBox, so the page fits it by itself.
+  // No measuring, no zoom, no redraw of a hidden container.
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(),true);
 });
 </script>
 </body>
