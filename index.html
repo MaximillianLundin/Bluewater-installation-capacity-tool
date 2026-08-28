@@ -14,7 +14,7 @@ body{font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif;
 header{background:var(--wh);padding:14px 32px;display:flex;align-items:center;gap:20px;border-bottom:2px solid var(--bw);position:sticky;top:0;z-index:50}
 .logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;white-space:nowrap}
 .logo-c{width:20px;height:20px;border:2.5px solid var(--blk);border-radius:50%;flex-shrink:0}
-.tool-t{font-size:14px;color:#888;font-weight:400;border-left:1px solid var(--gm);padding-left:20px}
+.tool-t{font-size:14px;color:var(--blk);font-weight:500;border-left:1px solid var(--gm);padding-left:20px}
 .utog{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .utog .tb{display:flex;border:2px solid var(--bw);border-radius:24px;overflow:hidden}
 .utog .tb button{padding:5px 16px;border:none;background:var(--wh);font-size:12px;font-weight:600;cursor:pointer;color:var(--bw);transition:.15s}
@@ -23,8 +23,8 @@ header{background:var(--wh);padding:14px 32px;display:flex;align-items:center;ga
 .ctn{max-width:1400px;margin:0 auto;padding:20px 32px}
 h2{font-size:17px;font-weight:700;margin-bottom:14px}
 .sec{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.note{font-size:12px;color:#999;font-style:italic}
-label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:#555}
+.note{font-size:12px;color:var(--blk);font-weight:500;font-style:italic}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--blk)}
 select,input[type="number"],textarea{width:100%;padding:8px 12px;border:1px solid var(--gm);border-radius:8px;font-size:14px;background:var(--wh);transition:.15s;font-family:inherit}
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--bw);box-shadow:0 0 0 2px rgba(74,106,245,.15)}
 textarea{resize:vertical;min-height:80px}
@@ -37,7 +37,7 @@ button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weigh
 .hidden{display:none!important}
 
 .snav{display:flex;gap:8px;margin-bottom:20px}
-.sb{padding:8px 24px;border:2px solid var(--gm);border-radius:24px;background:var(--wh);font-weight:600;font-size:14px;cursor:pointer;color:#999;transition:.15s}
+.sb{padding:8px 24px;border:2px solid var(--gm);border-radius:24px;background:var(--wh);font-weight:600;font-size:14px;cursor:pointer;color:var(--blk);transition:.15s}
 .sb.act{border-color:var(--bw);color:var(--bw);background:var(--bwl)}
 
 /* FLOW */
@@ -49,7 +49,7 @@ button{padding:8px 20px;border:none;border-radius:24px;font-size:14px;font-weigh
 .fn.eq{border-color:#666}
 .fn.sel{border-style:dashed;color:var(--bw);background:#FAFAFA;min-width:90px}
 .fn.sel:hover{background:var(--bwl)}
-.fn .ns{font-size:10px;font-weight:400;color:#777;margin-top:2px}
+.fn .ns{font-size:10px;font-weight:600;color:var(--blk);margin-top:2px}
 .fn .nnum{position:absolute;top:-10px;left:-10px;width:22px;height:22px;background:var(--bw);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .fl{width:36px;height:3px;background:var(--bw);flex-shrink:0;cursor:pointer;position:relative;transition:.15s}
 .fl:hover{height:5px;margin-top:-1px;background:var(--bwd)}
@@ -107,27 +107,30 @@ table.tl{border-collapse:collapse;min-width:100%}
 .rc.ok{background:#E8F5E9;border:1px solid var(--grn)}
 .rc.wa{background:#FFF8E1;border:1px solid var(--org)}
 .rc.cr{background:#FFEBEE;border:1px solid var(--red)}
-.rc .rv{font-size:28px;font-weight:700}.rc .rl{font-size:13px;color:#555;margin-top:4px}
+.rc .rv{font-size:28px;font-weight:700}.rc .rl{font-size:13px;color:var(--blk);font-weight:500;margin-top:4px}
 
 /* MODAL */
 .mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
 .mb{background:#fff;border-radius:var(--r);padding:24px;min-width:300px;max-width:460px;box-shadow:0 12px 40px rgba(0,0,0,.15);max-height:80vh;overflow-y:auto}
 .mb h3{margin-bottom:10px;font-size:16px}
-.mb p{font-size:13px;color:#666;margin-bottom:8px}
+.mb p{font-size:13px;color:var(--blk);font-weight:500;margin-bottom:8px}
 .ma{display:flex;gap:8px;flex-wrap:wrap}
 .ma button{flex:1;min-width:80px}
-.mcat{font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-top:8px;border-top:1px solid #EEE}
+.mcat{font-size:11px;font-weight:700;color:var(--blk);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-top:8px;border-top:1px solid #EEE}
 .mcat:first-child{border-top:none;margin-top:0;padding-top:0}
 .mbt{display:block;width:100%;text-align:left;padding:8px 14px;margin-bottom:4px;border:1px solid #E5E7EB;border-radius:8px;background:var(--wh);font-size:13px;font-weight:500;cursor:pointer;transition:.1s}
 .mbt:hover{background:var(--bwl);border-color:var(--bw)}
-.mbt .ms{font-size:11px;color:#888;font-weight:400}
-.specline{font-size:13px;color:#444;padding:3px 0}
+.mbt .ms{font-size:11px;color:var(--blk);font-weight:500}
+.specline{font-size:13px;color:var(--blk);font-weight:500;padding:3px 0}
 
+@page{size:A4 landscape;margin:15mm}
 @media print{
-  @page{size:A4 portrait;margin:15mm}
   header{position:static;border-bottom:2px solid var(--bw)}
-  .snav,.bs,.bp,.bd,.bsm,.utog,button{display:none!important}
-  body{background:#fff;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .snav,.bs,.bp,.bd,.bsm,.utog,.user-bar,button{display:none!important}
+  #print-meta{display:flex!important;margin-left:auto;flex-direction:column;align-items:flex-end;gap:2px}
+  body{background:#fff;font-size:11px;font-weight:500;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  h2,h3,strong,th,.fn,.rc .rv,.rc .rl,.si .sin,.si .siv{font-weight:800!important;color:#000!important}
+  td,p,span,label,div,.note,.cfg-meta,.cfg-dates,.specline,.tool-t,.sb,.mbt,.mcat{font-weight:500!important;color:#000!important}
   .sec{box-shadow:none;border:1px solid #ddd}
   .ctn{padding:10px 0}
   /* Page 1: Results */
@@ -135,7 +138,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   #step-1,#step-2,#step-3,#step-5{display:none!important}
   /* Page 2: Flow + Notes */
   #print-page2{display:block!important;page-break-before:always}
-  #print-page2 .fa{zoom:0.55;transform-origin:top left}
+  #print-page2 .fa{transform-origin:top left;overflow:visible}
   .fn.sel{display:none}
   .fl .ll{display:none}
   .fn .nnum{display:flex}
@@ -149,14 +152,19 @@ table.tl{border-collapse:collapse;min-width:100%}
 .fn .nnum{display:none}
 
 /* SAVED CONFIGS */
-.save-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.save-bar input[type="text"]{flex:1;min-width:200px}
+.save-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.save-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px}
+.save-field.narrow{flex:0 0 220px}
+.save-label{font-size:12px;font-weight:600;color:var(--blk)}
+.save-bar input[type="text"]{width:100%;box-sizing:border-box}
+#print-meta{display:none}
 .cfg-list{margin-top:16px}
 .cfg-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gr);border-radius:8px;margin-bottom:6px;transition:.15s}
 .cfg-item:hover{background:var(--bwl)}
 .cfg-info{cursor:pointer;flex:1}
 .cfg-title{font-weight:700;font-size:14px}
-.cfg-meta{font-size:11px;color:#888;margin-top:2px}
+.cfg-meta{font-size:11px;color:var(--blk);font-weight:500;margin-top:2px}
+.cfg-dates{font-size:11px;color:var(--blk);font-weight:500;margin-top:1px}
 .cfg-actions{display:flex;gap:6px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--blk);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
@@ -165,19 +173,19 @@ table.tl{border-collapse:collapse;min-width:100%}
 #auth-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
 .auth-box{background:var(--wh);border:1px solid #E5E7EB;border-radius:var(--r);padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .auth-box h2{margin-bottom:6px}
-.auth-box p{font-size:13px;color:#888;margin-bottom:20px}
+.auth-box p{font-size:13px;color:var(--blk);font-weight:500;margin-bottom:20px}
 .auth-box input[type="email"]{margin-bottom:12px}
 .auth-box .bp{width:100%;padding:12px}
 .auth-msg{font-size:13px;margin-top:12px;color:var(--grn)}
 .auth-err{font-size:13px;margin-top:12px;color:var(--red)}
-.user-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:#888}
+.user-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--blk)}
 .user-bar button{font-size:11px;padding:4px 12px}
 
 /* ADMIN */
 .admin-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gr);border-radius:8px;margin-bottom:6px;gap:12px}
 .admin-user-info{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap}
 .admin-email{font-weight:600;font-size:14px}
-.admin-meta{font-size:12px;color:#888}
+.admin-meta{font-size:12px;color:var(--blk);font-weight:500}
 .admin-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px}
 .admin-badge.bad{background:#FFEBEE;color:var(--red);border:1px solid var(--red)}
 .admin-badge.self{background:var(--bwl);color:var(--bw);border:1px solid var(--bw)}
@@ -199,6 +207,10 @@ table.tl{border-collapse:collapse;min-width:100%}
     <span id="user-email"></span>
     <button class="bs bsm" id="admin-btn" onclick="toggleAdmin()" style="display:none">Admin</button>
     <button class="bd bsm" onclick="signOut()">Log out</button>
+  </div>
+  <div id="print-meta">
+    <div style="font-size:13px;font-weight:700;color:var(--blk)" id="pm-project"></div>
+    <div style="font-size:12px;color:#666" id="pm-owner"></div>
   </div>
 </header>
 
@@ -272,7 +284,8 @@ table.tl{border-collapse:collapse;min-width:100%}
       <div class="cc"><canvas id="dc"></canvas></div>
       <div class="cc" style="height:280px;margin-top:20px"><canvas id="tc"></canvas></div>
       <div id="parts-list" style="margin-top:20px"></div>
-      <div style="margin-top:20px;display:flex;gap:12px">
+      <div id="print-hint" style="margin-top:20px;font-size:12px;font-weight:700;color:var(--red);display:none"></div>
+      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <button class="bp" onclick="window.print()">Print / Save PDF</button>
         <button class="bs" onclick="goTo(3)">Back to Timeline</button>
         <button class="bs" onclick="if(confirm('Starta om? All data raderas.'))location.reload()">Start over</button>
@@ -283,10 +296,16 @@ table.tl{border-collapse:collapse;min-width:100%}
   <div id="step-5" class="hidden">
     <div class="sec">
       <h2>Save & Load Configurations</h2>
-      <div class="note" style="margin-bottom:12px">Save the current configuration to Supabase, or load a previous one.</div>
+      <div class="note" style="margin-bottom:12px">Save your project here for future reference and updates.</div>
       <div class="save-bar">
-        <input type="text" id="cfg-title" placeholder="Title auto-generated from machine model..." readonly>
-        <input type="text" id="cfg-creator" placeholder="Your name (optional)" style="max-width:180px">
+        <div class="save-field">
+          <label class="save-label">Project name</label>
+          <input type="text" id="cfg-title" placeholder="Auto-generated from machine model...">
+        </div>
+        <div class="save-field narrow">
+          <label class="save-label">Your name</label>
+          <input type="text" id="cfg-creator" placeholder="Your name (optional)">
+        </div>
         <button class="bp" onclick="saveCfg()">Save Configuration</button>
       </div>
       <div class="cfg-list" id="cfg-list">
@@ -618,7 +637,7 @@ function buildPartsList(){
   h+='<thead><tr style="background:#1A1A1A;color:#fff"><th style="text-align:left;padding:7px 10px">Component</th><th style="text-align:left;padding:7px 10px">Details</th></tr></thead><tbody>';
   nodes.forEach((n,i)=>{
     const bg=i%2===0?'#F7F7F8':'#fff';
-    h+=`<tr style="background:${bg}"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #E5E7EB">${n.l}</td><td style="padding:6px 10px;color:#555;border-bottom:1px solid #E5E7EB">${n.s||''}</td></tr>`;
+    h+=`<tr style="background:${bg}"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #E5E7EB">${n.l}</td><td style="padding:6px 10px;font-weight:500;border-bottom:1px solid #E5E7EB">${n.s||''}</td></tr>`;
   });
   h+='</tbody></table>';
   document.getElementById('parts-list').innerHTML=h;
@@ -1248,7 +1267,7 @@ function updCfgTitle(){
 }
 
 async function saveCfg(){
-  const title=getCfgTitle();
+  const title=document.getElementById('cfg-title').value.trim()||getCfgTitle();
   const model=getCfgModel();
   const creator=document.getElementById('cfg-creator').value.trim()||null;
   const notes=document.getElementById('plumber-notes').value;
@@ -1262,8 +1281,7 @@ async function saveCfg(){
     timeline_data:JSON.parse(JSON.stringify(tl)),
     notes,
     unit_system:imp?'imperial':'metric',
-    created_by:creator,
-    user_id:currentUser?.id
+    created_by:creator
   });
 
   if(error){toast('Error: '+error.message);console.error(error);return}
@@ -1281,14 +1299,18 @@ async function loadCfgs(){
   if(error){el.innerHTML=`<div style="color:var(--red);padding:12px">Error loading: ${error.message}</div>`;return}
   if(!data||!data.length){el.innerHTML='<div style="color:#999;font-size:13px;padding:12px">No saved configurations yet.</div>';return}
 
+  const fmt=ts=>{const d=new Date(ts);return d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})};
   el.innerHTML=data.map(c=>{
-    const d=new Date(c.created_at);
-    const date=d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    const created=fmt(c.created_at);
+    const updated=fmt(c.updated_at);
     const by=c.created_by?' · '+c.created_by:'';
+    const model=c.model?'Bluewater '+c.model:'';
+    const dateRow=updated!==created?`Created: ${created} · Last saved: ${updated}`:`Created: ${created}`;
     return `<div class="cfg-item">
       <div class="cfg-info" onclick="loadCfg('${c.id}')">
         <div class="cfg-title">${c.title}</div>
-        <div class="cfg-meta">${date}${by} · ${c.unit_system}</div>
+        <div class="cfg-meta">${model}${by} · ${c.unit_system}</div>
+        <div class="cfg-dates">${dateRow}</div>
       </div>
       <div class="cfg-actions">
         <button class="bs bsm" onclick="loadCfg('${c.id}')">Load</button>
@@ -1310,6 +1332,8 @@ async function loadCfg(id){
   eqCfg=data.equipment_config;
   tl=data.timeline_data;
   document.getElementById('plumber-notes').value=data.notes||'';
+  document.getElementById('cfg-title').value=data.title||'';
+  document.getElementById('cfg-creator').value=data.created_by||'';
   if(data.unit_system==='imperial'&&!imp) setU('i');
   else if(data.unit_system==='metric'&&imp) setU('m');
 
@@ -1373,8 +1397,132 @@ async function unbanUser(email){
   toast('Access restored for '+email);loadAdminData();
 }
 
+// ================================================================
+// PRINT POPUP
+// ================================================================
+function openPrintWindow(){
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const projectName=esc(document.getElementById('cfg-title').value||getCfgTitle());
+  const owner=esc(document.getElementById('cfg-creator').value.trim());
+  const notes=esc(document.getElementById('plumber-notes').value);
+  const now=new Date();
+  const date=now.toLocaleDateString('sv-SE')+' '+now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+  nodeNum=0;
+  const diagram=rPath(mainPath,'m',true);
+
+  const css=`
+    @page{size:A4 landscape;margin:10mm}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:#fff;color:#000}
+    .ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;padding-bottom:10px;border-bottom:2.5px solid #000}
+    .ph-l h1{font-size:22px;font-weight:800;color:#000}
+    .ph-l .sub{font-size:13px;font-weight:700;color:#000;margin-top:3px}
+    .ph-r{font-size:12px;font-weight:700;text-align:right;color:#000;line-height:1.8}
+    .fa{overflow:visible;padding:16px 0}
+    .fr{display:flex;align-items:center;flex-wrap:nowrap}
+    .fn{background:#fff;border:2.5px solid #000;border-radius:8px;padding:10px 18px;text-align:center;font-size:14px;font-weight:800;min-width:110px;white-space:nowrap;flex-shrink:0;position:relative;color:#000;pointer-events:none}
+    .fn.src{background:#f2f2f2}
+    .fn.sel{display:none}
+    .fn .ns{font-size:11px;font-weight:700;color:#000;margin-top:3px}
+    .fn .nnum{position:absolute;top:-12px;left:-12px;width:26px;height:26px;background:#000;color:#fff;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .fl{width:36px;height:3px;background:#000;flex-shrink:0;position:relative}
+    .fl .ll{display:none}
+    .fi{border-radius:4px;padding:4px 10px;font-size:11px;font-weight:800;flex-shrink:0;border:2px solid #000;color:#000;background:#fff;pointer-events:none}
+    .yfork{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:middle}
+    .ybr{display:flex;align-items:center;padding:4px 0}
+    .yconn{width:20px;flex-shrink:0;align-self:stretch;position:relative}
+    .yconn::before{content:'';position:absolute;top:50%;left:0;right:0;height:3px;background:#000}
+    .yconn.ytop::after{content:'';position:absolute;top:50%;bottom:0;left:0;width:3px;background:#000}
+    .yconn.ybot::after{content:'';position:absolute;bottom:50%;top:0;left:0;width:3px;background:#000}
+    .yconn.yclk{width:54px}
+    .yll{display:none}
+    .notes{margin-top:20px;border-top:1.5px solid #000;padding-top:12px}
+    .notes h2{font-size:15px;font-weight:800;color:#000;margin-bottom:8px}
+    .notes-body{font-size:13px;font-weight:700;color:#000;white-space:pre-wrap;line-height:1.7;border:1.5px solid #000;padding:12px 14px;border-radius:8px}`;
+
+  const body=`
+    <div class="ph">
+      <div class="ph-l">
+        <h1>${projectName}</h1>
+        ${owner?`<div class="sub">Owner: ${owner}</div>`:''}
+      </div>
+      <div class="ph-r">
+        <div>Installation Flow Diagram</div>
+        <div>${date}</div>
+      </div>
+    </div>
+    <div class="fa" id="diag">${diagram}</div>
+    ${notes?`<div class="notes"><h2>Installation Notes</h2><div class="notes-body">${notes}</div></div>`:''}
+    <script>
+    window.addEventListener('load',function(){
+      var fa=document.getElementById('diag');
+      var fr=fa&&fa.querySelector('.fr');
+      if(fr){
+        var nw=Math.max(fr.scrollWidth,fr.offsetWidth)||1;
+        var nh=Math.max(fr.offsetHeight,1);
+        var tw=Math.round(277*96/25.4);
+        var th=Math.round(150*96/25.4);
+        var scale=Math.min(tw/nw,th/nh,2.5);
+        fa.style.zoom=Math.max(0.3,scale);
+      }
+      setTimeout(function(){window.print();},400);
+    });
+    <\/script>`;
+
+  const w=window.open('','_blank','width=1200,height=900');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+projectName+' — Flow Diagram</title><style>'+css+'</style></head><body>'+body+'</body></html>');
+  w.document.close();
+}
+
+// Show print orientation hint for Safari users
+(function(){
+  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const el=document.getElementById('print-hint');
+  if(isSafari){
+    el.textContent='Safari does not support automatic landscape orientation. In the print dialog: click "Show Details" → select Landscape.';
+    el.style.display='block';
+  }
+})();
+
 // INIT
 renderFlow();
+
+window.addEventListener('beforeprint',()=>{
+  const title=document.getElementById('cfg-title').value||getCfgTitle();
+  const owner=document.getElementById('cfg-creator').value.trim();
+  document.getElementById('pm-project').textContent=title;
+  document.getElementById('pm-owner').textContent=owner?'Owner: '+owner:'';
+
+  // Measure #fa-print with overflow removed so we get the true content width.
+  // Must use setProperty('important') to beat the .fa class rule overflow:auto.
+  const p2=document.getElementById('print-page2');
+  const faP=document.getElementById('fa-print');
+  p2.style.display='block';
+  p2.style.position='fixed';
+  p2.style.left='-9999px';
+  p2.style.top='0';
+  p2.style.visibility='hidden';
+  faP.style.setProperty('overflow','visible','important');
+  faP.style.setProperty('width','max-content','important');
+  void faP.offsetWidth; // force reflow
+  const naturalW=Math.max(faP.scrollWidth,faP.offsetWidth,1);
+  const naturalH=Math.max(faP.scrollHeight,faP.offsetHeight,1);
+  faP.style.removeProperty('overflow');
+  faP.style.removeProperty('width');
+  p2.style.display='';
+  p2.style.position='';
+  p2.style.left='';
+  p2.style.top='';
+  p2.style.visibility='';
+
+  // A4 landscape, 15mm margins → 267mm × 180mm content area
+  // Reserve ~55mm vertically for heading + notes
+  const pxPerMm=96/25.4;
+  const availW=Math.round(267*pxPerMm);  // ~1009px
+  const availH=Math.round(125*pxPerMm);  // ~473px for diagram area
+  const scale=Math.min(availW/naturalW,availH/naturalH,2.0);
+  faP.style.zoom=Math.max(0.3,scale);
+});
 </script>
 </body>
 </html>
