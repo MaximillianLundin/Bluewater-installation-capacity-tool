@@ -80,12 +80,12 @@ svg.flow text{font-family:inherit;dominant-baseline:auto;text-anchor:middle;poin
 .bdg rect{stroke-width:1.5;transition:.15s}
 .bdg text{font-size:10px;font-weight:700}
 .bdg:hover rect{filter:drop-shadow(0 2px 5px rgba(0,0,0,.16))}
-.bdg.cv rect{fill:#DCFCE7;stroke:#14803D}   .bdg.cv text{fill:#14542E}
-.bdg.sv rect{fill:#FFF1F2;stroke:#BE123C}   .bdg.sv text{fill:#881337}
-.bdg.tc rect{fill:var(--g100);stroke:var(--g600)} .bdg.tc text{fill:var(--g900)}
-.bdg.yc rect{fill:var(--g100);stroke:var(--g600)} .bdg.yc text{fill:var(--g900)}
-.bdg.jc rect{fill:var(--bw2);stroke:var(--bw)} .bdg.jc text{fill:#1F3B8A}
-.bdg.bp rect{fill:var(--bw2);stroke:var(--bw)} .bdg.bp text{fill:#1F3B8A}
+.bdg.k-cv rect{fill:#DCFCE7;stroke:#14803D}   .bdg.k-cv text{fill:#14542E}
+.bdg.k-sv rect{fill:#FFF1F2;stroke:#BE123C}   .bdg.k-sv text{fill:#881337}
+.bdg.k-tc rect{fill:var(--g100);stroke:var(--g600)} .bdg.k-tc text{fill:var(--g900)}
+.bdg.k-yc rect{fill:var(--g100);stroke:var(--g600)} .bdg.k-yc text{fill:var(--g900)}
+.bdg.k-jc rect{fill:var(--bw2);stroke:var(--bw)} .bdg.k-jc text{fill:#1F3B8A}
+.bdg.k-bp rect{fill:var(--bw2);stroke:var(--bw)} .bdg.k-bp text{fill:#1F3B8A}
 
 /* connectors — the "+" only appears on hover, no permanent click labels */
 .eg{cursor:pointer}
@@ -193,6 +193,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   svg.flow-p .nbx.src rect{fill:var(--g100)!important}
   svg.flow-p .nl,svg.flow-p .ns{fill:#000!important}
   svg.flow-p .bdg rect{stroke:#000!important} svg.flow-p .bdg text{fill:#000!important}
+  svg.flow-p .eg-ln.byp,svg.flow-p .nsel-ln.byp{stroke:#2563EB!important}
   svg.flow-p .byp-halo{stroke:#fff!important}
   .lgd{color:#000!important}
 }
@@ -561,9 +562,10 @@ function layoutFlow(forPrint){
     const end=cells.find(c=>c.kind==='bypend'&&c.nd===n);
     const jc=cells.find(c=>c.nd.id===n.linkTo);
     if(!end||!jc) return;
-    byps.push({end,jc,lane:i});
+    const blocked=jc.col<=end.col||cells.some(c=>c.lane===end.lane&&c.col>end.col&&c.col<=jc.col&&c.kind!=='sel');
+    byps.push({end,jc,lane:i,clear:!blocked});
   });
-  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+(byps.length?byps.length*16+14:0);
+  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+((byps.filter(b=>!b.clear).length)?byps.filter(b=>!b.clear).length*16+14:0);
   byps.forEach(b=>{
     b.y=LY.padY+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+12+b.lane*16;
     // rise in the gutter left of the junction's column: no node is ever there
@@ -627,8 +629,12 @@ function svgFlow(L,forPrint){
   // bypass runs
   L.byps.forEach(b=>{
     const j=b.jc;
-    const ex=b.end.x+b.end.w+20;   // always exit to the right of the marker
-    const d=orth([[b.end.x+b.end.w,b.end.cy],[ex,b.end.cy],[ex,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]],10);
+    // straight out to the right, then up into the junction. Only detour down to
+    // the reserved lane when a part actually sits on that row along the way.
+    const pts=b.clear
+      ? [[b.end.x+b.end.w,b.end.cy],[b.rx,b.end.cy],[b.rx,j.cy],[j.x,j.cy]]
+      : [[b.end.x+b.end.w,b.end.cy],[b.end.x+b.end.w+20,b.end.cy],[b.end.x+b.end.w+20,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]];
+    const d=orth(pts,10);
     s+='<path class="byp-halo" d="'+d+'"/><path class="byp-ln" d="'+d+'"/>'
       +'<path class="byp-hd" d="M '+(j.x-9)+' '+(j.cy-5)+' L '+(j.x-2)+' '+j.cy+' L '+(j.x-9)+' '+(j.cy+5)+'"/>';
   });
@@ -654,7 +660,7 @@ function svgFlow(L,forPrint){
     }
     if(c.kind==='badge'){
       const k=badgeOf(nd);
-      s+='<g class="bdg '+k+'" onclick="fiClick(\''+c.pid+'\','+c.idx+')">'
+      s+='<g class="bdg k-'+k+'" onclick="fiClick(\''+c.pid+'\','+c.idx+')">'
         +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="6"/>'
         +'<text x="'+(x+c.w/2)+'" y="'+(c.cy+3.8)+'">'+(k==='bp'?'BP':BADGE[k][1])+'</text></g>';
       return;
