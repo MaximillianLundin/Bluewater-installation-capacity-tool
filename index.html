@@ -526,10 +526,14 @@ function layoutFlow(forPrint){
           const e1=walk(nd.br[1],p1,c+1,bl,byp||isB);
           last=Math.max(last,e1);
           if(isB){
-            cells.push({nd,pid,idx:i,col:e1+1,lane:bl,w:76,h:26,kind:'bypend',byp:true});
-            // the marker used to float unconnected — join it to the run
-            edges.push({kind:'seg',c0:e1,l0:bl,c1:e1+1,l1:bl,byp:true,noclick:true});
-            last=Math.max(last,e1+1);
+            // Anchor the marker to the last cell on the bypass's OWN lane, not to
+            // walk()'s return: that is the deepest column of the whole subtree, so
+            // a branch off the bypass pushes it past this lane and the joining
+            // edge then has nothing to start from.
+            const lastOnLane=cells.reduce((m,cc)=>cc.lane===bl&&cc.col>m?cc.col:m,c);
+            cells.push({nd,pid,idx:i,col:lastOnLane+1,lane:bl,w:76,h:26,kind:'bypend',byp:true});
+            edges.push({kind:'seg',c0:lastOnLane,l0:bl,c1:lastOnLane+1,l1:bl,byp:true,noclick:true});
+            last=Math.max(last,lastOnLane+1);
           }
         }
         return last;                              // a branch node terminates its path
@@ -563,9 +567,14 @@ function layoutFlow(forPrint){
     const jc=cells.find(c=>c.nd.id===n.linkTo);
     if(!end||!jc) return;
     const blocked=jc.col<=end.col||cells.some(c=>c.lane===end.lane&&c.col>end.col&&c.col<=jc.col&&c.kind!=='sel');
-    byps.push({end,jc,lane:i,clear:!blocked});
+    // junction sitting directly above the marker: go straight up instead of
+    // looping out right, down and back left to reach something overhead
+    const overlap=Math.min(end.x+end.w,jc.x+jc.w)-Math.max(end.x,jc.x);
+    const overhead=jc.lane<end.lane&&overlap>8;
+    const upX=Math.max(end.x+8,Math.min(end.x+end.w-8,jc.x+jc.w/2));
+    byps.push({end,jc,lane:i,clear:!blocked,overhead,upX});
   });
-  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+((byps.filter(b=>!b.clear).length)?byps.filter(b=>!b.clear).length*16+14:0);
+  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+((byps.filter(b=>!b.clear&&!b.overhead).length)?byps.filter(b=>!b.clear&&!b.overhead).length*16+14:0);
   byps.forEach(b=>{
     b.y=LY.padY+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+12+b.lane*16;
     // rise in the gutter left of the junction's column: no node is ever there
@@ -638,14 +647,22 @@ function svgFlow(L,forPrint){
   // bypass runs
   L.byps.forEach(b=>{
     const j=b.jc;
-    // straight out to the right, then up into the junction. Only detour down to
-    // the reserved lane when a part actually sits on that row along the way.
-    const pts=b.clear
-      ? [[b.end.x+b.end.w,b.end.cy],[b.rx,b.end.cy],[b.rx,j.cy],[j.x,j.cy]]
-      : [[b.end.x+b.end.w,b.end.cy],[b.end.x+b.end.w+20,b.end.cy],[b.end.x+b.end.w+20,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]];
+    let pts,head;
+    if(b.overhead){
+      // straight up out of the marker into the junction above it
+      pts=[[b.upX,b.end.y],[b.upX,j.y+j.h+5]];
+      head='M '+(b.upX-5)+' '+(j.y+j.h+10)+' L '+b.upX+' '+(j.y+j.h+2)+' L '+(b.upX+5)+' '+(j.y+j.h+10);
+    } else {
+      // out to the right and up into the junction; only dip to the reserved
+      // lane when a part actually sits on that row along the way
+      pts=b.clear
+        ? [[b.end.x+b.end.w,b.end.cy],[b.rx,b.end.cy],[b.rx,j.cy],[j.x,j.cy]]
+        : [[b.end.x+b.end.w,b.end.cy],[b.end.x+b.end.w+20,b.end.cy],[b.end.x+b.end.w+20,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]];
+      head='M '+(j.x-9)+' '+(j.cy-5)+' L '+(j.x-2)+' '+j.cy+' L '+(j.x-9)+' '+(j.cy+5);
+    }
     const d=orth(pts,10);
     s+='<path class="byp-halo" d="'+d+'"/><path class="byp-ln" d="'+d+'"/>'
-      +'<path class="byp-hd" d="M '+(j.x-9)+' '+(j.cy-5)+' L '+(j.x-2)+' '+j.cy+' L '+(j.x-9)+' '+(j.cy+5)+'"/>';
+      +'<path class="byp-hd" d="'+head+'"/>';
   });
 
   // nodes
