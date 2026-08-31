@@ -94,6 +94,8 @@ svg.flow text{font-family:inherit;dominant-baseline:auto;text-anchor:middle;poin
 .eg:hover .eg-add{opacity:1}
 
 /* bypass run */
+.eg-ln.byp{stroke:var(--bw);stroke-dasharray:7 6}
+.eg.byp:hover .eg-ln{stroke:var(--bwd)}
 .byp-halo{fill:none;stroke:var(--gr);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
 .byp-ln{fill:none;stroke:var(--bw);stroke-width:2.5;stroke-dasharray:7 6;stroke-linecap:round;stroke-linejoin:round}
 .byp-hd{fill:none;stroke:var(--bw);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
@@ -489,29 +491,39 @@ function ndSize(nd){
 function layoutFlow(){
   const cells=[],edges=[];
   let maxLane=0;
-  function walk(path,pid,col,lane){
+  // `byp` marks everything belonging to a bypass run, so the whole pipe from the
+  // BP tee to the junction draws as one dashed blue line rather than as ordinary
+  // branch segments plus a detached marker.
+  function walk(path,pid,col,lane,byp){
     let c=col,last=col-1;
     for(let i=0;i<path.length;i++){
       const nd=path[i];
       // the trailing select after a branch node floats in empty space
       if(nd.ct==='select'&&i>0&&path[i-1].isY) continue;
       const sz=ndSize(nd);
-      cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind});
-      if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i});
+      cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind,byp});
+      if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i,byp});
       last=c;
       if(nd.isY&&nd.br){
         const bl=++maxLane;                       // reserve the drop lane first
         const p0=pid+'-0-'+nd.id, p1=pid+'-1-'+nd.id;
+        const isB=nd.tt==='B';
         if(nd.br[0].length){
-          edges.push({kind:'seg',c0:c,l0:lane,c1:c+1,l1:lane,pid:p0,idx:0});
-          last=Math.max(last,walk(nd.br[0],p0,c+1,lane));
+          // branch 0 is the line carrying straight on, so it keeps the parent's style
+          edges.push({kind:'seg',c0:c,l0:lane,c1:c+1,l1:lane,pid:p0,idx:0,byp});
+          last=Math.max(last,walk(nd.br[0],p0,c+1,lane,byp));
         }
         if(nd.br[1].length){
-          edges.push({kind:'drop',c0:c,l0:lane,c1:c+1,l1:bl,pid:p1,idx:0});
-          const e1=walk(nd.br[1],p1,c+1,bl);
+          // for a BP tee this drop is where the bypass leaves the line
+          edges.push({kind:'drop',c0:c,l0:lane,c1:c+1,l1:bl,pid:p1,idx:0,byp:byp||isB});
+          const e1=walk(nd.br[1],p1,c+1,bl,byp||isB);
           last=Math.max(last,e1);
-          if(nd.tt==='B') cells.push({nd,pid,idx:i,col:e1+1,lane:bl,w:76,h:26,kind:'bypend'});
-          if(nd.tt==='B') last=Math.max(last,e1+1);
+          if(isB){
+            cells.push({nd,pid,idx:i,col:e1+1,lane:bl,w:76,h:26,kind:'bypend',byp:true});
+            // the marker used to float unconnected — join it to the run
+            edges.push({kind:'seg',c0:e1,l0:bl,c1:e1+1,l1:bl,byp:true,noclick:true});
+            last=Math.max(last,e1+1);
+          }
         }
         return last;                              // a branch node terminates its path
       }
@@ -519,7 +531,7 @@ function layoutFlow(){
     }
     return last;
   }
-  walk(mainPath,'m',0,0);
+  walk(mainPath,'m',0,0,false);
 
   // column widths / lane centres
   const colW=[],nCols=Math.max(...cells.map(c=>c.col))+1;
@@ -598,8 +610,10 @@ function svgFlow(L,forPrint){
       d=orth([[a.x+a.w,a.cy],[b.x,b.cy]],0);
       mx=(a.x+a.w+b.x)/2;my=a.cy;
     }
-    s+='<g class="eg" onclick="lnClick(\''+e.pid+'\','+e.idx+')">'
-      +'<path class="eg-hit" d="'+d+'"/><path class="eg-ln" d="'+d+'"/>'
+    const bc=e.byp?' byp':'';
+    if(e.noclick){ s+='<path class="eg-ln'+bc+'" d="'+d+'"/>'; return }
+    s+='<g class="eg'+bc+'" onclick="lnClick(\''+e.pid+'\','+e.idx+')">'
+      +'<path class="eg-hit" d="'+d+'"/><path class="eg-ln'+bc+'" d="'+d+'"/>'
       +'<g class="eg-add" transform="translate('+mx+','+my+')"><circle r="9"/>'
       +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
   });
