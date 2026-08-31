@@ -619,6 +619,9 @@ function svgFlow(L,forPrint){
       mx=(a.x+a.w+b.x)/2;my=a.cy;
     }
     const bc=e.byp?' byp':'';
+    // the add-slot draws its own feeding line, so it is one hover target with
+    // one +, instead of an edge and a stub each offering their own
+    if(b.kind==='sel') return;
     if(e.noclick){ s+='<path class="eg-ln'+bc+'" d="'+d+'"/>'; return }
     s+='<g class="eg'+bc+'" onclick="lnClick(\''+e.pid+'\','+e.idx+')">'
       +'<path class="eg-hit" d="'+d+'"/><path class="eg-ln'+bc+'" d="'+d+'"/>'
@@ -651,9 +654,11 @@ function svgFlow(L,forPrint){
     }
     if(c.kind==='sel'){
       // the line simply runs on, with a + that shows on hover
+      const prev=L.at(c.col-1,c.lane);
+      const hx=prev?prev.x+prev.w:x;      // start at the part this run leaves
       s+='<g class="nsel'+(c.byp?' byp':'')+'" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
-        +'<rect class="nsel-hit" x="'+x+'" y="'+(c.cy-16)+'" width="'+(c.w+10)+'" height="32"/>'
-        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+x+' '+c.cy+' H '+(x+c.w-13)+'"/>'
+        +'<rect class="nsel-hit" x="'+hx+'" y="'+(c.cy-16)+'" width="'+(x-hx+c.w+10)+'" height="32"/>'
+        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+hx+' '+c.cy+' H '+(x+c.w-13)+'"/>'
         +'<g class="nsel-add" transform="translate('+(x+c.w-4)+','+c.cy+')"><circle r="9"/>'
         +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
       return;
