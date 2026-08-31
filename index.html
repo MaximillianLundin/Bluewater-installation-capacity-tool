@@ -66,10 +66,14 @@ svg.flow text{font-family:inherit;dominant-baseline:auto;text-anchor:middle;poin
 
 /* add-a-part slot */
 .nsel{cursor:pointer}
-.nsel rect{fill:none;stroke:var(--g400);stroke-width:1.5;stroke-dasharray:5 4;transition:.15s}
-.nsel text{font-size:11.5px;font-weight:600;fill:var(--g500)}
-.nsel:hover rect{stroke:var(--bw);fill:var(--bwl)}
-.nsel:hover text{fill:var(--bw)}
+.nsel-hit{fill:transparent;stroke:none}
+.nsel-ln{fill:none;stroke:var(--g400);stroke-width:2.5;stroke-linecap:round;transition:.15s}
+.nsel-add{opacity:0;transition:.15s;pointer-events:none}
+.nsel-add circle{fill:var(--bw)}
+.nsel-add path{stroke:#fff;stroke-width:2;stroke-linecap:round}
+.nsel-ln.byp{stroke:var(--bw);stroke-dasharray:7 6}
+.nsel:hover .nsel-ln{stroke:var(--bw)}
+.nsel:hover .nsel-add{opacity:1}
 
 /* inline fittings */
 .bdg{cursor:pointer}
@@ -289,7 +293,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   <div id="step-1">
     <div class="sec">
       <h2>Water Flow Diagram</h2>
-      <div class="note">Click <strong>+ Add part</strong> to extend the flow. Hover a line and click the <strong>+</strong> to insert between parts. Click any box or fitting to see specs or remove it.</div>
+      <div class="note">Hover any line and click the <strong>+</strong> to add a part — at the end of a line to extend it, or between parts to insert. Click a box or fitting to see specs or remove it.</div>
       <div id="fa" class="fa"></div>
       <div class="lgd">
         <span><b style="background:#F4F4F5;border-color:#52525B;color:#18181B">T</b> T-connector</span>
@@ -472,7 +476,7 @@ function renumberEq(){
 // measured off the DOM. Risers run in the gutters between columns, which are
 // clear by construction -- no collision scanning, no overlay, no zoom hack.
 // ================================================================
-const LY={colGap:44,laneGap:30,rowH:50,badgeW:40,badgeH:28,selW:104,selH:34,padX:28,padY:26,minW:118};
+const LY={colGap:44,laneGap:30,rowH:50,badgeW:40,badgeH:28,selW:46,selH:30,padX:28,padY:26,minW:118};
 
 let _mctx=null;
 function txtW(s,weight,size){
@@ -481,14 +485,14 @@ function txtW(s,weight,size){
   return _mctx.measureText(s||'').width;
 }
 function ndSize(nd){
-  if(nd.ct==='select') return {w:LY.selW,h:LY.selH,kind:'sel'};
+  if(nd.ct==='select') return {w:LY.selW,h:LY.selH,kind:'sel'};  // stub, not a box
   if(nd.isCV||nd.isSV||nd.isJ||nd.isY) return {w:LY.badgeW,h:LY.badgeH,kind:'badge'};
   const w=Math.max(LY.minW,Math.ceil(Math.max(txtW(nd.l,'700',12.5),txtW(nd.s,'500',10.5)))+30);
   return {w,h:nd.s?48:34,kind:'node'};
 }
 
 // Walk the tree assigning cells. Returns the last column the path occupied.
-function layoutFlow(){
+function layoutFlow(forPrint){
   const cells=[],edges=[];
   let maxLane=0;
   // `byp` marks everything belonging to a bypass run, so the whole pipe from the
@@ -500,6 +504,8 @@ function layoutFlow(){
       const nd=path[i];
       // the trailing select after a branch node floats in empty space
       if(nd.ct==='select'&&i>0&&path[i-1].isY) continue;
+      // on paper the add-slot is not a part, so it gets no column at all
+      if(nd.ct==='select'&&forPrint) continue;
       const sz=ndSize(nd);
       cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind,byp});
       if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i,byp});
@@ -621,7 +627,8 @@ function svgFlow(L,forPrint){
   // bypass runs
   L.byps.forEach(b=>{
     const j=b.jc;
-    const d=orth([[b.end.x+b.end.w/2,b.end.y+b.end.h],[b.end.x+b.end.w/2,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]],10);
+    const ex=b.end.x+b.end.w+20;   // always exit to the right of the marker
+    const d=orth([[b.end.x+b.end.w,b.end.cy],[ex,b.end.cy],[ex,b.y],[b.rx,b.y],[b.rx,j.cy],[j.x,j.cy]],10);
     s+='<path class="byp-halo" d="'+d+'"/><path class="byp-ln" d="'+d+'"/>'
       +'<path class="byp-hd" d="M '+(j.x-9)+' '+(j.cy-5)+' L '+(j.x-2)+' '+j.cy+' L '+(j.x-9)+' '+(j.cy+5)+'"/>';
   });
@@ -637,9 +644,12 @@ function svgFlow(L,forPrint){
       return;
     }
     if(c.kind==='sel'){
-      s+='<g class="nsel" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
-        +'<rect x="'+x+'" y="'+y+'" width="'+c.w+'" height="'+c.h+'" rx="8"/>'
-        +'<text x="'+(x+c.w/2)+'" y="'+(c.cy+4)+'">+ Add part</text></g>';
+      // the line simply runs on, with a + that shows on hover
+      s+='<g class="nsel'+(c.byp?' byp':'')+'" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
+        +'<rect class="nsel-hit" x="'+x+'" y="'+(c.cy-16)+'" width="'+(c.w+10)+'" height="32"/>'
+        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+x+' '+c.cy+' H '+(x+c.w-13)+'"/>'
+        +'<g class="nsel-add" transform="translate('+(x+c.w-4)+','+c.cy+')"><circle r="9"/>'
+        +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
       return;
     }
     if(c.kind==='badge'){
@@ -669,9 +679,8 @@ function svgFlow(L,forPrint){
 
 function renderFlow(){
   renumberEq();
-  const L=layoutFlow();
-  document.getElementById('fa').innerHTML=svgFlow(L,false);
-  document.getElementById('fa-print').innerHTML=svgFlow(L,true);
+  document.getElementById('fa').innerHTML=svgFlow(layoutFlow(false),false);
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
 }
 
 function findNd(p,id){
@@ -1181,7 +1190,7 @@ function clrTL(){
 function runSim(){
   // Update print content
   document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
-  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(),true);
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
   buildPartsList();
 
   const ro=colRO(mainPath);
@@ -1680,7 +1689,7 @@ window.addEventListener('beforeprint',()=>{
   document.getElementById('pm-owner').textContent=owner?'Owner: '+owner:'';
   // The flow is an SVG with a viewBox, so the page fits it by itself.
   // No measuring, no zoom, no redraw of a hidden container.
-  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(),true);
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
 });
 </script>
 </body>
