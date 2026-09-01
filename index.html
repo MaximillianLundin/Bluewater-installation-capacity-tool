@@ -417,7 +417,7 @@ const CAT = {
   junction:{c:'Flow Control',l:'Junction',s:'Where a bypass reconnects',isJ:true},
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
   shutoff:{c:'Flow Control',l:'Shut-off Valve',s:'Turns flow on and off',isSV:true},
-  seaflo:{c:'Flow Control',l:'Seaflo 23 Series',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
+  seaflo:{c:'Flow Control',l:'Seaflo 23 Series',s:'1.9–5.6 l/min | 2.8–4.8 bar'},
   seaflo33:{c:'Flow Control',l:'Seaflo 33 Series',s:'10.6–11.3 l/min | 3.1 bar'},
   rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
   watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
@@ -435,6 +435,7 @@ const CAT = {
 // Datasheet detail shown when a part is clicked. Non-RO parts only; RO machines
 // use RO_SPECS. Values are inert -- nothing here feeds the simulation.
 const PART_SPECS={
+  seaflo:[['Voltage','12V / 24V'],['Open flow','1.9–5.6 l/min (0.5–1.5 GPM)'],['Shut-off pressure','2.8–4.8 bar (40–70 PSI)'],['Priming','0.6–1.5 m (2–5 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','5/8\u2033 quick attach']],
   seaflo33:[['Voltage','12V / 24V / 115V / 220V'],['Open flow','10.6–11.3 l/min (2.8–3.0 GPM)'],['Shut-off pressure','3.1 bar (45 PSI)'],['Priming','1.8 m (6 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','1/2\u2033-14 MNPT']]
 };
 
