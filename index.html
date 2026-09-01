@@ -530,20 +530,18 @@ function layoutFlow(forPrint){
           last=Math.max(last,walk(nd.br[0],p0,c+1,lane,byp));
         }
         if(nd.br[1].length){
-          // for a BP tee this drop is where the bypass leaves the line
-          edges.push({kind:'drop',c0:c,l0:lane,c1:c+1,l1:bl,pid:p1,idx:0,byp:byp||isB});
-          const e1=walk(nd.br[1],p1,c+1,bl,byp||isB);
-          last=Math.max(last,e1);
           if(isB){
-            // Anchor the marker to the last cell on the bypass's OWN lane, not to
-            // walk()'s return: that is the deepest column of the whole subtree, so
-            // a branch off the bypass pushes it past this lane and the joining
-            // edge then has nothing to start from.
-            const lastOnLane=cells.reduce((m,cc)=>cc.lane===bl&&cc.col>m?cc.col:m,c);
-            cells.push({nd,pid,idx:i,col:lastOnLane+1,lane:bl,w:76,h:26,kind:'bypend',byp:true});
-            edges.push({kind:'seg',c0:lastOnLane,l0:bl,c1:lastOnLane+1,l1:bl,byp:true,noclick:true});
-            last=Math.max(last,lastOnLane+1);
+            // The marker sits in the tee's own column, one lane down, so the
+            // bypass drops straight into it. Both are centred in that column, so
+            // the drop is a plain vertical. Bypass parts then run to its right,
+            // which keeps the line out to the junction as short as it can be.
+            cells.push({nd,pid,idx:i,col:c,lane:bl,w:76,h:26,kind:'bypend',byp:true});
+            edges.push({kind:'vdrop',c0:c,l0:lane,c1:c,l1:bl,byp:true,noclick:true});
+            edges.push({kind:'seg',c0:c,l0:bl,c1:c+1,l1:bl,byp:true,noclick:true});
+          } else {
+            edges.push({kind:'drop',c0:c,l0:lane,c1:c+1,l1:bl,pid:p1,idx:0,byp});
           }
+          last=Math.max(last,walk(nd.br[1],p1,c+1,bl,byp||isB));
         }
         return last;                              // a branch node terminates its path
       }
@@ -572,12 +570,14 @@ function layoutFlow(forPrint){
   const byps=[];
   colByp(mainPath).forEach((n,i)=>{
     if(!n.linkTo) return;
-    const end=cells.find(c=>c.kind==='bypend'&&c.nd===n);
+    const mk=cells.find(c=>c.kind==='bypend'&&c.nd===n);
     const jc=cells.find(c=>c.nd.id===n.linkTo);
-    if(!end||!jc) return;
+    if(!mk||!jc) return;
+    // leave from the far end of the bypass run, not from the marker
+    let end=mk;
+    cells.forEach(c=>{if(c.lane===mk.lane&&c.col>end.col)end=c});
+    if(end.kind==='sel') end.fullStub=true;   // keep the line unbroken into the riser
     const blocked=jc.col<=end.col||cells.some(c=>c.lane===end.lane&&c.col>end.col&&c.col<=jc.col&&c.kind!=='sel');
-    // junction sitting directly above the marker: go straight up instead of
-    // looping out right, down and back left to reach something overhead
     const overlap=Math.min(end.x+end.w,jc.x+jc.w)-Math.max(end.x,jc.x);
     const overhead=jc.lane<end.lane&&overlap>8;
     const upX=Math.max(end.x+8,Math.min(end.x+end.w-8,jc.x+jc.w/2));
@@ -629,7 +629,12 @@ function svgFlow(L,forPrint){
     const a=L.at(e.c0,e.l0),b=L.at(e.c1,e.l1);
     if(!a||!b) return;
     let d,mx,my;
-    if(e.kind==='drop'){
+    if(e.kind==='vdrop'){
+      // tee and marker share a column, so both centre on the same x
+      const cx=a.x+a.w/2;
+      d='M '+cx+' '+(a.y+a.h)+' L '+cx+' '+b.y;
+      mx=cx;my=(a.y+a.h+b.y)/2;
+    } else if(e.kind==='drop'){
       d=orth([[a.x+a.w/2,a.y+a.h],[a.x+a.w/2,b.cy],[b.x,b.cy]],10);
       mx=a.x+a.w/2;my=(a.y+a.h+b.cy)/2;
     } else {
@@ -690,7 +695,7 @@ function svgFlow(L,forPrint){
       const hx=prev?prev.x+prev.w:x;      // start at the part this run leaves
       s+='<g class="nsel'+(c.byp?' byp':'')+'" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
         +'<rect class="nsel-hit" x="'+hx+'" y="'+(c.cy-16)+'" width="'+(x-hx+c.w+10)+'" height="32"/>'
-        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+hx+' '+c.cy+' H '+(L.at(c.col+1,c.lane)?x+c.w:x+c.w-13)+'"/>'
+        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+hx+' '+c.cy+' H '+((c.fullStub||L.at(c.col+1,c.lane))?x+c.w:x+c.w-13)+'"/>'
         +'<g class="nsel-add" transform="translate('+(x+c.w-4)+','+c.cy+')"><circle r="9"/>'
         +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
       return;
