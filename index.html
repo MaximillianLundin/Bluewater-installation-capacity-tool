@@ -296,14 +296,7 @@ table.tl{border-collapse:collapse;min-width:100%}
       <h2>Water Flow Diagram</h2>
       <div class="note">Hover any line and click the <strong>+</strong> to add a part — at the end of a line to extend it, or between parts to insert. Click a box or fitting to see specs or remove it.</div>
       <div id="fa" class="fa"></div>
-      <div class="lgd">
-        <span><b style="background:#F4F4F5;border-color:#52525B;color:#18181B">T</b> T-connector</span>
-        <span><b style="background:#F4F4F5;border-color:#52525B;color:#18181B">Y</b> Y-connector</span>
-        <span><b style="background:#BFDBFE;border-color:#2563EB;color:#1F3B8A">BP</b> Bypass line</span>
-        <span><b style="background:#BFDBFE;border-color:#2563EB;color:#1F3B8A">J</b> Junction</span>
-        <span><b style="background:#DCFCE7;border-color:#14803D;color:#14542E">CV</b> Checkvalve</span>
-        <span><b style="background:#FFF1F2;border-color:#BE123C;color:#881337">SV</b> Shut-off valve</span>
-      </div>
+      <div class="lgd" id="lgd-screen"></div>
       <div style="margin-top:16px">
         <label>Installation Notes (for plumber)</label>
         <textarea id="plumber-notes" placeholder="Write notes about the installation here..."></textarea>
@@ -384,6 +377,7 @@ table.tl{border-collapse:collapse;min-width:100%}
     <div class="sec">
       <h2>Installation Flow Diagram</h2>
       <div id="fa-print" class="fa"></div>
+      <div class="lgd" id="lgd-print"></div>
       <div style="margin-top:16px">
         <h2>Installation Notes</h2>
         <div id="notes-print" style="white-space:pre-wrap;font-size:13px;min-height:60px;border:1px solid #ddd;padding:12px;border-radius:8px"></div>
@@ -614,6 +608,34 @@ function orth(pts,r){
 }
 
 const BADGE={cv:['Checkvalve','CV'],sv:['Shut-off Valve','SV'],jc:['Junction','J'],tc:['T-Connector','T'],yc:['Y-Connector','Y']};
+// abbr -> [label, fill, stroke, text]
+const LEGEND=[
+  ['T','T-connector','#F4F4F5','#52525B','#18181B'],
+  ['Y','Y-connector','#F4F4F5','#52525B','#18181B'],
+  ['BP','Bypass line','#BFDBFE','#2563EB','#1F3B8A'],
+  ['J','Junction','#BFDBFE','#2563EB','#1F3B8A'],
+  ['CV','Checkvalve','#DCFCE7','#14803D','#14542E'],
+  ['SV','Shut-off valve','#FFF1F2','#BE123C','#881337']
+];
+// which fittings the drawing actually uses, so the PDF lists only those
+function usedBadges(){
+  const set=new Set();
+  (function w(p){p.forEach(n=>{
+    if(n.isCV)set.add('CV'); if(n.isSV)set.add('SV'); if(n.isJ)set.add('J');
+    if(n.tt==='T')set.add('T'); else if(n.tt==='B')set.add('BP'); else if(n.isY)set.add('Y');
+    if(n.isY&&n.br)n.br.forEach(w);
+  })})(mainPath);
+  return set;
+}
+function legendHTML(only){
+  return LEGEND.filter(r=>!only||only.has(r[0])).map(r=>
+    `<span><b style="background:${r[2]};border-color:${r[3]};color:${r[4]}">${r[0]}</b> ${r[1]}</span>`).join('');
+}
+function renderPrintFlow(){
+  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
+  const el=document.getElementById('lgd-print');
+  if(el) el.innerHTML=legendHTML(usedBadges());
+}
 function badgeOf(nd){
   if(nd.isCV) return 'cv';
   if(nd.isSV) return 'sv';
@@ -732,7 +754,7 @@ function svgFlow(L,forPrint){
 function renderFlow(){
   renumberEq();
   document.getElementById('fa').innerHTML=svgFlow(layoutFlow(false),false);
-  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
+  renderPrintFlow();
 }
 
 function findNd(p,id){
@@ -1257,7 +1279,7 @@ function clrTL(){
 function runSim(){
   // Update print content
   document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
-  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
+  renderPrintFlow();
   buildPartsList();
 
   const ro=colRO(mainPath);
@@ -1747,6 +1769,7 @@ async function unbanUser(email){
 })();
 
 // INIT
+(function(){const el=document.getElementById('lgd-screen');if(el)el.innerHTML=legendHTML(null)})();
 renderFlow();
 
 window.addEventListener('beforeprint',()=>{
@@ -1756,7 +1779,7 @@ window.addEventListener('beforeprint',()=>{
   document.getElementById('pm-owner').textContent=owner?'Owner: '+owner:'';
   // The flow is an SVG with a viewBox, so the page fits it by itself.
   // No measuring, no zoom, no redraw of a hidden container.
-  document.getElementById('fa-print').innerHTML=svgFlow(layoutFlow(true),true);
+  renderPrintFlow();
 });
 </script>
 </body>
