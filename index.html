@@ -417,7 +417,8 @@ const CAT = {
   junction:{c:'Flow Control',l:'Junction',s:'Where a bypass reconnects',isJ:true},
   checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
   shutoff:{c:'Flow Control',l:'Shut-off Valve',s:'Turns flow on and off',isSV:true},
-  seaflo:{c:'Flow Control',l:'Seaflo Pump',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
+  seaflo:{c:'Flow Control',l:'Seaflo 23 Series',s:'1.89–5.6 l/min | 2.8–4.8 bar'},
+  seaflo33:{c:'Flow Control',l:'Seaflo 33 Series',s:'10.6–11.3 l/min | 3.1 bar'},
   rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
   watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
   cafestation:{c:'Storage & Treatment',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
@@ -427,7 +428,14 @@ const CAT = {
   hotwater:{c:'Equipment',l:'Hot Water Tank (Pour over, Chemex)',s:'300ml default draw',isEq:true,et:'hotwater'},
   coldwater:{c:'Equipment',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
   bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'},
-  icemachine:{c:'Equipment',l:'Ice Machine',s:'Tech specs TBD',isEq:true,et:'icemachine'}
+  icemachine:{c:'Equipment',l:'Ice Machine',s:'Tech specs TBD',isEq:true,et:'icemachine'},
+  custom:{c:'Other',l:'Custom Part',s:'Name it when you add it',isCustom:true}
+};
+
+// Datasheet detail shown when a part is clicked. Non-RO parts only; RO machines
+// use RO_SPECS. Values are inert -- nothing here feeds the simulation.
+const PART_SPECS={
+  seaflo33:[['Voltage','12V / 24V / 115V / 220V'],['Open flow','10.6–11.3 l/min (2.8–3.0 GPM)'],['Shut-off pressure','3.1 bar (45 PSI)'],['Priming','1.8 m (6 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','1/2\u2033-14 MNPT']]
 };
 
 const DRINKS=[{n:'Espresso',ml:70},{n:'Tea',ml:200},{n:'Americano',ml:150}];
@@ -786,6 +794,7 @@ function selClick(pid,idx){
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="addRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isWT) h+=`<div class="mbt" onclick="addWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isCustom) h+=`<div class="mbt" onclick="addCustom('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="addN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
   h+=`<div style="margin-top:12px;display:flex;gap:8px"><button class="bd bsm" style="flex:1" onclick="rmSel('${pid}',${idx})">Clear</button><button class="bs bsm" style="flex:1" onclick="cm()">Cancel</button></div>`;
@@ -800,6 +809,7 @@ function lnClick(pid,idx){
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="insRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isWT) h+=`<div class="mbt" onclick="insWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isCustom) h+=`<div class="mbt" onclick="insCustom('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="insN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
   h+='<div style="margin-top:12px"><button class="bs bsm" style="width:100%" onclick="cm()">Cancel</button></div>';
@@ -870,6 +880,23 @@ function doWT(pid,idx){
   ensSel(p);renderFlow();cm();
 }
 
+function customBody(){return`<div style="margin-bottom:12px"><label>Name</label><input type="text" id="cst-n" placeholder="e.g. Pressure gauge" maxlength="40"></div><div style="margin-bottom:12px"><label>Detail (optional)</label><input type="text" id="cst-s" placeholder="e.g. 0–10 bar, panel mount" maxlength="60"></div><p style="font-size:12px;color:var(--g600)">A documentation-only part. It has no flow rate and is ignored by the capacity simulation.</p>`}
+function customOpen(pid,idx,verb){
+  sm(`<h3>Custom Part</h3>${customBody()}<div class="ma"><button class="bp bsm" onclick="doCustom('${pid}',${idx})">${verb}</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`);
+  const el=document.getElementById('cst-n');
+  if(el){el.focus();el.addEventListener('keydown',e=>{if(e.key==='Enter')doCustom(pid,idx)})}
+}
+function addCustom(pid,idx){customOpen(pid,idx,'Add')}
+function insCustom(pid,idx){customOpen(pid,idx,'Insert')}
+function doCustom(pid,idx){
+  const n=document.getElementById('cst-n').value.trim()||'Custom Part';
+  const d=document.getElementById('cst-s').value.trim();
+  const p=resP(pid);
+  // no fr, no ro, not isEq: invisible to runSim, the timeline and demand
+  p.splice(idx,0,{id:gid(),ct:'custom',l:n,s:d,isEq:false,isCV:false,isY:false,isSV:false,isJ:false,fr:0,ro:false,custom:true});
+  ensSel(p);renderFlow();cm();
+}
+
 function mkNd(key,c){
   const nd={id:gid(),ct:key,l:c.l,s:c.s,isEq:!!c.isEq,isCV:!!c.isCV,isY:!!c.isY,isSV:!!c.isSV,isJ:!!c.isJ,fr:c.fr||0,ro:!!c.ro};
   if(c.tt) nd.tt=c.tt;
@@ -904,6 +931,8 @@ function ndClick(pid,idx){
     h+=`<div class="specline"><strong>Recovery:</strong> ${sp.recovery}</div>`;
     h+=`<div class="specline"><strong>Power:</strong> ${sp.power}</div>`;
     h+=`<div class="specline"><strong>Inlet pressure:</strong> ${sp.inlet}</div>`;
+  } else if(PART_SPECS[nd.ct]){
+    PART_SPECS[nd.ct].forEach(r=>{h+=`<div class="specline"><strong>${r[0]}:</strong> ${r[1]}</div>`});
   } else {
     h+=`<p>${nd.s||''}</p>`;
   }
@@ -917,16 +946,30 @@ function fiClick(pid,idx){
   let extra='';
   if(nd.tt==='B') extra=`<button class="bs" onclick="bypPick('${nd.id}')">${nd.linkTo?'Change junction':'Connect to junction'}</button>`;
   if(nd.isJ&&colByp(mainPath).some(b=>b.linkTo===nd.id)) extra='<p>A bypass currently rejoins here. Removing this junction leaves that bypass unconnected.</p>';
+  if(nd.isY&&nd.br){
+    const kept=nd.br[0].filter(n=>n.ct!=='select').length;
+    const lost=colAllNodes(nd.br[1]).length;
+    extra+='<p>'+(kept?'The '+kept+' part'+(kept>1?'s':'')+' after it stay on the line. ':'')
+      +(lost?'The branch and its '+lost+' part'+(lost>1?'s':'')+' will be removed.':'The empty branch will be removed.')+'</p>';
+  }
   sm(`<h3>${ttl}</h3>${extra}<div class="ma"><button class="bd" onclick="rmNd('${pid}',${idx})">Remove</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`);
 }
 
 function rmNd(pid,idx){
   const p=resP(pid);const nd=p[idx];
   if(nd.isEq){delete eqCfg[nd.id];delete tl[nd.id]}
-  if(nd.isY&&nd.br)nd.br.forEach(b=>clnBr(b));
   // Dropping a junction must not leave bypasses pointing at a node that's gone
   if(nd.isJ)colByp(mainPath).forEach(b=>{if(b.linkTo===nd.id)b.linkTo=null});
-  p.splice(idx,1);ensSel(p);renderFlow();cm();
+  if(nd.isY&&nd.br){
+    // For a T/Y/BP the line carrying on lives in branch 0, so splice it back in
+    // place: removing the fitting must not delete everything downstream of it.
+    // Branch 1 is the branch actually being removed.
+    clnBr(nd.br[1]);
+    p.splice(idx,1,...nd.br[0].filter(n=>n.ct!=='select'));
+  } else {
+    p.splice(idx,1);
+  }
+  ensSel(p);renderFlow();cm();
 }
 
 function clnBr(br){br.forEach(n=>{if(n.isEq){delete eqCfg[n.id];delete tl[n.id]}if(n.isJ)colByp(mainPath).forEach(b=>{if(b.linkTo===n.id)b.linkTo=null});if(n.isY&&n.br)n.br.forEach(b=>clnBr(b))})}
