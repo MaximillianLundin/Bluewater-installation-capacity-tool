@@ -817,31 +817,11 @@ function lnClick(pid,idx){
   sm(h);
 }
 
-function addN(pid,idx,key){
-  const p=resP(pid);const c=CAT[key];const nd=mkNd(key,c);
-  if(c.isY){
-    // Carry non-fixed/non-RO nodes before the Select into top branch
-    let carryNodes=[];
-    let carryStart=idx;
-    for(let j=idx-1;j>=0;j--){
-      const prev=p[j];
-      if(prev.fx||prev.ct==='mains'||prev.ro) break;
-      carryNodes.unshift(prev);
-      carryStart=j;
-    }
-    // Remove carried nodes from path
-    if(carryNodes.length) p.splice(carryStart, carryNodes.length);
-    // Recalculate idx after removal
-    const newIdx=carryStart;
-    // Put carried nodes into top branch + select
-    nd.br[0]=[...carryNodes,{id:gid(),ct:'select'}];
-    p.splice(newIdx,1,nd); // replace select with Y
-    ensSel(p);
-  } else {
-    p.splice(idx,0,nd);ensSel(p);
-  }
-  renderFlow();cm();
-}
+// Adding at the end of a line and inserting mid-line are the same operation:
+// the part goes where it was clicked, and whatever followed carries on down
+// branch 0. addN used to walk backwards from the click and pull the preceding
+// parts into the branch, which landed a Y/T before the part you clicked after.
+function addN(pid,idx,key){ insN(pid,idx,key) }
 function insN(pid,idx,key){
   const p=resP(pid);const c=CAT[key];const nd=mkNd(key,c);
   if(c.isY){
