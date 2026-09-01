@@ -581,6 +581,9 @@ function layoutFlow(forPrint){
     const overlap=Math.min(end.x+end.w,jc.x+jc.w)-Math.max(end.x,jc.x);
     const overhead=jc.lane<end.lane&&overlap>8;
     const upX=Math.max(end.x+8,Math.min(end.x+end.w-8,jc.x+jc.w/2));
+    // The riser turns up inside the end cell, so the run must stop at that
+    // corner rather than carry on to the cell's right edge and leave a tail.
+    if(overhead&&end.kind==='sel') end.stubEnd=upX;
     byps.push({end,jc,lane:i,clear:!blocked,overhead,upX});
   });
   const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+((byps.filter(b=>!b.clear&&!b.overhead).length)?byps.filter(b=>!b.clear&&!b.overhead).length*16+14:0);
@@ -663,8 +666,9 @@ function svgFlow(L,forPrint){
     const j=b.jc;
     let pts,head;
     if(b.overhead){
-      // straight up out of the marker into the junction above it
-      pts=[[b.upX,b.end.y],[b.upX,j.y+j.h+5]];
+      // straight up into the junction above. Leave from the line's own level on
+      // a slot, or from the top edge on a part, so the corner actually meets.
+      pts=[[b.upX,b.end.kind==='sel'?b.end.cy:b.end.y],[b.upX,j.y+j.h+5]];
       head='M '+(b.upX-5)+' '+(j.y+j.h+10)+' L '+b.upX+' '+(j.y+j.h+2)+' L '+(b.upX+5)+' '+(j.y+j.h+10);
     } else {
       // out to the right and up into the junction; only dip to the reserved
@@ -694,9 +698,9 @@ function svgFlow(L,forPrint){
       const prev=L.at(c.col-1,c.lane);
       const hx=prev?prev.x+prev.w:x;      // start at the part this run leaves
       s+='<g class="nsel'+(c.byp?' byp':'')+'" onclick="selClick(\''+c.pid+'\','+c.idx+')">'
-        +'<rect class="nsel-hit" x="'+hx+'" y="'+(c.cy-16)+'" width="'+(x-hx+c.w+10)+'" height="32"/>'
-        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+hx+' '+c.cy+' H '+((c.fullStub||L.at(c.col+1,c.lane))?x+c.w:x+c.w-13)+'"/>'
-        +'<g class="nsel-add" transform="translate('+(x+c.w-4)+','+c.cy+')"><circle r="9"/>'
+        +'<rect class="nsel-hit" x="'+hx+'" y="'+(c.cy-16)+'" width="'+(c.stubEnd!=null?c.stubEnd-hx:x-hx+c.w+10)+'" height="32"/>'
+        +'<path class="nsel-ln'+(c.byp?' byp':'')+'" d="M '+hx+' '+c.cy+' H '+(c.stubEnd!=null?c.stubEnd:((c.fullStub||L.at(c.col+1,c.lane))?x+c.w:x+c.w-13))+'"/>'
+        +'<g class="nsel-add" transform="translate('+(c.stubEnd!=null?(hx+c.stubEnd)/2:x+c.w-4)+','+c.cy+')"><circle r="9"/>'
         +'<path d="M -4.5 0 H 4.5 M 0 -4.5 V 4.5"/></g></g>';
       return;
     }
