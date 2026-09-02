@@ -1230,10 +1230,12 @@ function unitTotals(){
 }
 function unitsHTML(heading){
   const rows=unitTotals();
-  const body=rows.length
-    ? rows.map(r=>`<div class="si"><span class="sin">${r.label}</span><span class="siv">${r.n} ${r.n===1?r.unit.replace(/s$/,''):r.unit}</span></div>`).join('')
-    : '<div class="si"><span class="sin">Nothing on the timeline yet</span><span class="siv">—</span></div>';
-  return `<h3>${heading}</h3><div class="sg">${body}</div>`;
+  if(!rows.length) return `<h3>${heading}</h3><div class="sg"><div class="si"><span class="sin">Nothing on the timeline yet</span><span class="siv">—</span></div></div>`;
+  const body=rows.map(r=>`<div class="si"><span class="sin">${r.label}</span><span class="siv">${r.n} ${r.n===1?r.unit.replace(/s$/,''):r.unit}</span></div>`).join('');
+  // one figure across drinks, draws and bottles alike
+  const total=rows.reduce((a,r)=>a+r.n,0);
+  return `<h3>${heading}</h3><div class="sg">${body}`
+    +`<div class="si" style="background:var(--bwl)"><span class="sin">TOTAL UNITS SOLD</span><span class="siv">${total} ${total===1?'unit':'units'}</span></div></div>`;
 }
 
 function uSum(){
