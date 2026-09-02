@@ -394,15 +394,30 @@ table.tl{border-collapse:collapse;min-width:100%}
 // DATA
 // ================================================================
 const RO_SPECS = {
-  cleone:{flow15:'0.10 l/min (6 l/h)',flow25:'0.14 l/min (8.4 l/h)',recovery:'25% @15°C | 30% @25°C',power:'23W',inlet:'N/A'},
+  // Cleone: Bluewater-Cleone-Specs-2026-09-02. The sheet publishes direct flow at
+  // 25 °C only, and that is the figure driving capacity here (see basis note below).
+  cleone:{rows:[
+    ['Direct flow','0.36 l/min (21.6 l/h) @25°C — before the tank'],
+    ['Flow from tank','2.75 l/min — up to 610 l/day, depends on tank level'],
+    ['Water recovery','50%'],
+    ['Storage','12 L pressure tank'],
+    ['Membrane','75 GPD'],
+    ['Inlet pressure','1.2–10 bar'],
+    ['Min inlet flow','>0.8 l/min'],
+    ['Feed temperature','2–35 °C'],
+    ['Power','30 W (24 V DC)']
+  ]},
   spirit:{flow15:'2.5 l/min (150 l/h)',flow25:'2.8 l/min (168 l/h)',recovery:'60% @15°C | 65% @25°C',power:'350W',inlet:'2–10 bar'},
   pro600:{flow15:'4.5 l/min (270 l/h)',flow25:'5.4 l/min (324 l/h)',recovery:'70% @15°C | 75% @25°C',power:'720W',inlet:'2–10 bar'}
 };
-// Simulation always assumes 15°C inlet, optimal pressure (2–10 bar). Flow rates use @15°C values.
+// Simulation assumes optimal pressure. Spirit and PRO run on their @15°C flow.
+// Cleone runs on the @25°C direct flow published in the 2026-09-02 sheet, which
+// gives no 15°C figure — so Cleone's capacity is not on the same temperature
+// basis as the other two, and the two are not directly comparable.
 
 const CAT = {
   prefilters:{c:'Purification',l:'Pre Filters',s:'Sediment + Carbon',fr:0},
-  cleone:{c:'Purification',l:'Bluewater Cleone',s:'0.10 l/min (6 l/h) @15°C',fr:0.10,ro:true},
+  cleone:{c:'Purification',l:'Bluewater Cleone',s:'0.36 l/min (21.6 l/h) @25°C',fr:0.36,ro:true},
   spirit:{c:'Purification',l:'Bluewater Spirit',s:'2.5 l/min (150 l/h) @15°C',fr:2.5,ro:true},
   pro600:{c:'Purification',l:'Bluewater PRO',s:'4.5 l/min (270 l/h) @15°C',fr:4.5,ro:true},
   yconnector:{c:'Flow Control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
@@ -938,11 +953,16 @@ function ndClick(pid,idx){
   let h=`<h3>${nd.l}</h3>`;
   if(nd.ro && RO_SPECS[nd.ct]){
     const sp=RO_SPECS[nd.ct];
-    h+=`<div class="specline"><strong>Flow @15°C:</strong> ${sp.flow15}</div>`;
-    h+=`<div class="specline"><strong>Flow @25°C:</strong> ${sp.flow25}</div>`;
-    h+=`<div class="specline"><strong>Recovery:</strong> ${sp.recovery}</div>`;
-    h+=`<div class="specline"><strong>Power:</strong> ${sp.power}</div>`;
-    h+=`<div class="specline"><strong>Inlet pressure:</strong> ${sp.inlet}</div>`;
+    if(sp.rows){
+      sp.rows.forEach(r=>{h+=`<div class="specline"><strong>${r[0]}:</strong> ${r[1]}</div>`});
+      h+=`<div class="specline" style="color:var(--g600)">Capacity here uses the published @25°C direct flow.</div>`;
+    } else {
+      h+=`<div class="specline"><strong>Flow @15°C:</strong> ${sp.flow15}</div>`;
+      h+=`<div class="specline"><strong>Flow @25°C:</strong> ${sp.flow25}</div>`;
+      h+=`<div class="specline"><strong>Recovery:</strong> ${sp.recovery}</div>`;
+      h+=`<div class="specline"><strong>Power:</strong> ${sp.power}</div>`;
+      h+=`<div class="specline"><strong>Inlet pressure:</strong> ${sp.inlet}</div>`;
+    }
   } else if(PART_SPECS[nd.ct]){
     PART_SPECS[nd.ct].forEach(r=>{h+=`<div class="specline"><strong>${r[0]}:</strong> ${r[1]}</div>`});
   } else {
