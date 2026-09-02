@@ -331,6 +331,7 @@ table.tl{border-collapse:collapse;min-width:100%}
     <div class="sec">
       <h2>Water Demand vs Production Analysis</h2>
       <div id="rsum" class="rs"></div>
+      <div id="units-served" style="margin-top:18px"></div>
       <div class="cc"><canvas id="dc"></canvas></div>
       <div class="cc" style="height:280px;margin-top:20px"><canvas id="tc"></canvas></div>
       <div id="parts-list" style="margin-top:20px"></div>
@@ -1206,6 +1207,35 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+const UNIT_WORD={espresso:'cups',filter:'cups',hotwater:'draws',coldwater:'draws',bottles:'bottles',icemachine:'servings'};
+// Counts, not volume: how many of each drink the timeline serves in the hour.
+// Aggregated by drink name so two espresso machines report one Espresso total.
+function unitTotals(){
+  const agg=new Map();
+  colEq(mainPath).forEach(eq=>{
+    const c=eqCfg[eq.id];if(!c)return;
+    const add=(label,n,unit)=>{if(n<=0)return;const k=label+'\u0000'+unit;agg.set(k,(agg.get(k)||0)+n)};
+    if(c.t==='espresso'||c.t==='icemachine'){
+      (c.drinks||[]).forEach(dk=>{
+        const key=eq.id+'_'+dk.n;let n=0;
+        for(let m=0;m<60;m++){const v=tl[key]&&tl[key][m];if(v)n+=v}
+        add(dk.n,n,UNIT_WORD[c.t]);
+      });
+    } else {
+      let n=0;for(let m=0;m<60;m++){const v=tl[eq.id]&&tl[eq.id][m];if(v)n+=v}
+      add(CAT[eq.et]?CAT[eq.et].l:eq.l,n,UNIT_WORD[c.t]||'servings');
+    }
+  });
+  return [...agg.entries()].map(e=>{const p=e[0].split('\u0000');return{label:p[0],unit:p[1],n:e[1]}});
+}
+function unitsHTML(heading){
+  const rows=unitTotals();
+  const body=rows.length
+    ? rows.map(r=>`<div class="si"><span class="sin">${r.label}</span><span class="siv">${r.n} ${r.n===1?r.unit.replace(/s$/,''):r.unit}</span></div>`).join('')
+    : '<div class="si"><span class="sin">Nothing on the timeline yet</span><span class="siv">—</span></div>';
+  return `<h3>${heading}</h3><div class="sg">${body}</div>`;
+}
+
 function uSum(){
   const eqs=colEq(mainPath);const el=document.getElementById('tls');
   if(!eqs.length){el.innerHTML='';return}
@@ -1233,7 +1263,8 @@ function uSum(){
     return `<div class="si"><span class="sin">${eq.l}</span><span class="siv">${imp?mlV(t)+' '+mlU():fV(t)}</span></div>`;
   }).filter(Boolean);
   const td=imp?mlV(tAll)+' '+mlU():fV(tAll);
-  el.innerHTML=`<h3>Demand Summary</h3><div class="sg">${items.join('')}<div class="si" style="background:var(--bwl)"><span class="sin">TOTAL</span><span class="siv">${td}</span></div></div>`;
+  el.innerHTML=`<h3>Demand Summary</h3><div class="sg">${items.join('')}<div class="si" style="background:var(--bwl)"><span class="sin">TOTAL</span><span class="siv">${td}</span></div></div>`
+    +`<div style="margin-top:16px">${unitsHTML('Units Served in the Hour')}</div>`;
 }
 
 // Presets
@@ -1299,6 +1330,8 @@ function clrTL(){
 function runSim(){
   // Update print content
   document.getElementById('notes-print').textContent=document.getElementById('plumber-notes').value;
+  const us=document.getElementById('units-served');
+  if(us) us.innerHTML=unitsHTML('Units Served in the Hour');
   renderPrintFlow();
   buildPartsList();
 
