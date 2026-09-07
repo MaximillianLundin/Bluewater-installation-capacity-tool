@@ -417,28 +417,37 @@ const RO_SPECS = {
 // basis as the other two, and the two are not directly comparable.
 
 const CAT = {
-  prefilters:{c:'Purification',l:'Pre Filters',s:'Sediment + Carbon',fr:0},
-  cleone:{c:'Purification',l:'Bluewater Cleone',s:'0.36 l/min (21.6 l/h) @25°C',fr:0.36,ro:true},
-  spirit:{c:'Purification',l:'Bluewater Spirit',s:'2.5 l/min (150 l/h) @15°C',fr:2.5,ro:true},
-  pro600:{c:'Purification',l:'Bluewater PRO',s:'4.5 l/min (270 l/h) @15°C',fr:4.5,ro:true},
-  yconnector:{c:'Flow Control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
-  tconnector:{c:'Flow Control',l:'T-Connector',s:'Branches flow down and right',isY:true,tt:'T'},
-  bypass:{c:'Flow Control',l:'Bypass Line',s:'Runs past the system, rejoins at a Junction',isY:true,tt:'B'},
-  junction:{c:'Flow Control',l:'Junction',s:'Where a bypass reconnects',isJ:true},
-  checkvalve:{c:'Flow Control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
-  shutoff:{c:'Flow Control',l:'Shut-off Valve',s:'Turns flow on and off',isSV:true},
-  seaflo:{c:'Flow Control',l:'Seaflo 23 Series',s:'1.9–5.6 l/min | 2.8–4.8 bar'},
-  seaflo33:{c:'Flow Control',l:'Seaflo 33 Series',s:'10.6–11.3 l/min | 3.1 bar'},
-  rotank:{c:'Storage & Treatment',l:'RO Tank',s:'50% usable volume',isRT:true},
-  watertank:{c:'Storage & Treatment',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
-  cafestation:{c:'Storage & Treatment',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
-  mineraliser:{c:'Storage & Treatment',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
-  espresso:{c:'Equipment',l:'Espresso Machine',s:'Espresso / Tea / Americano',isEq:true,et:'espresso'},
-  filter:{c:'Equipment',l:'Filter Brewer',s:'Batch brew',isEq:true,et:'filter'},
-  hotwater:{c:'Equipment',l:'Hot Water Tank (Pour over, Chemex)',s:'300ml default draw',isEq:true,et:'hotwater'},
-  coldwater:{c:'Equipment',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
-  bottles:{c:'Equipment',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'},
-  icemachine:{c:'Equipment',l:'Ice Machine',s:'Tech specs TBD',isEq:true,et:'icemachine'},
+  // The picker emits a category heading whenever c changes, so entries are kept
+  // contiguous per category and in the order the categories should appear.
+  prefilters:{c:'Filtration',l:'Pre Filters',s:'Sediment + Carbon',fr:0},
+  cleone:{c:'Filtration',l:'Bluewater Cleone',s:'0.36 l/min (21.6 l/h) @25\u00B0C',fr:0.36,ro:true},
+  spirit:{c:'Filtration',l:'Bluewater Spirit',s:'2.5 l/min (150 l/h) @15\u00B0C',fr:2.5,ro:true},
+  pro600:{c:'Filtration',l:'Bluewater PRO',s:'4.5 l/min (270 l/h) @15\u00B0C',fr:4.5,ro:true},
+
+  yconnector:{c:'Flow control',l:'Y-Connector',s:'Splits into 2 branches',isY:true},
+  tconnector:{c:'Flow control',l:'T-Connector',s:'Branches flow down and right',isY:true,tt:'T'},
+  bypass:{c:'Flow control',l:'Bypass Line',s:'Runs past the system, rejoins at a Junction',isY:true,tt:'B'},
+  junction:{c:'Flow control',l:'Junction',s:'Where a bypass reconnects',isJ:true},
+  checkvalve:{c:'Flow control',l:'Checkvalve',s:'Prevents backflow',isCV:true},
+  shutoff:{c:'Flow control',l:'Shut-off Valve',s:'Turns flow on and off',isSV:true},
+
+  rotank:{c:'Storage',l:'RO Tank',s:'50% usable volume',isRT:true},
+  watertank:{c:'Storage',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
+
+  cafestation:{c:'Bluewater Products',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
+  mineraliser:{c:'Bluewater Products',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
+  // Brand signal only: no flow rate, not equipment, so the simulation never sees it
+  bwo:{c:'Bluewater Products',l:'Bluewater O',s:'Brand signal',fr:0},
+
+  seaflo:{c:'External hardware',l:'Seaflo 23 Series',s:'1.9\u20135.6 l/min | 2.8\u20134.8 bar'},
+  seaflo33:{c:'External hardware',l:'Seaflo 33 Series',s:'10.6\u201311.3 l/min | 3.1 bar'},
+  espresso:{c:'External hardware',l:'Espresso Machine',s:'Espresso / Tea / Americano',isEq:true,et:'espresso'},
+  filter:{c:'External hardware',l:'Filter Brewer',s:'Batch brew',isEq:true,et:'filter'},
+  hotwater:{c:'External hardware',l:'Hot Water Tank (Pour over, Chemex)',s:'300ml default draw',isEq:true,et:'hotwater'},
+  coldwater:{c:'External hardware',l:'Cold Water Faucet',s:'Pour over, water etc',isEq:true,et:'coldwater'},
+  bottles:{c:'External hardware',l:'Water Bottles',s:'330ml per bottle',isEq:true,et:'bottles'},
+  icemachine:{c:'External hardware',l:'Ice Machine',s:'Tech specs TBD',isEq:true,et:'icemachine'},
+
   custom:{c:'Other',l:'Custom Part',s:'Name it when you add it',isCustom:true}
 };
 
