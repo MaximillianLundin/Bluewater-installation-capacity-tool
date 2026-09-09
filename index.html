@@ -522,7 +522,7 @@ function ndSize(nd){
 
 // Walk the tree assigning cells. Returns the last column the path occupied.
 function layoutFlow(forPrint){
-  const cells=[],edges=[];
+  const cells=[],edges=[],branches=[];
   let maxLane=0;
   // `byp` marks everything belonging to a bypass run, so the whole pipe from the
   // BP tee to the junction draws as one dashed blue line rather than as ordinary
@@ -540,7 +540,8 @@ function layoutFlow(forPrint){
       if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i,byp});
       last=c;
       if(nd.isY&&nd.br){
-        const bl=++maxLane;                       // reserve the drop lane first
+        const bl=++maxLane;                       // provisional id; real depth assigned below
+        branches.push({id:bl,teeCol:c,parent:lane});
         const p0=pid+'-0-'+nd.id, p1=pid+'-1-'+nd.id;
         const isB=nd.tt==='B';
         if(nd.br[0].length){
@@ -570,6 +571,30 @@ function layoutFlow(forPrint){
   }
   walk(mainPath,'m',0,0,false);
 
+  // Lane depth follows the flow. The earliest tee sits furthest from the main
+  // line and every later branch sits inside it, so a later drop never has to
+  // cross an earlier branch's run. A branch's own sub-branches are placed
+  // immediately beyond it, which keeps each assembly together instead of
+  // interleaving it with its neighbours' lanes.
+  if(maxLane){
+    const depth={0:0};let next=1;
+    (function assign(parent){
+      branches.filter(b=>b.parent===parent)
+        .sort((a,b)=>b.teeCol-a.teeCol)      // later tee first, so it lands shallower
+        .forEach(b=>{depth[b.id]=next++;assign(b.id)});
+    })(0);
+    const map=l=>depth[l]!==undefined?depth[l]:-1;
+    cells.forEach(c=>{c.lane=map(c.lane)});
+    edges.forEach(e=>{e.l0=map(e.l0);e.l1=map(e.l1)});
+    // a branch that produced no cells (an empty one, on paper) leaves a hole;
+    // close it up so it does not reserve a blank row
+    const used=[...new Set(cells.map(c=>c.lane))].sort((a,b)=>a-b);
+    const tight={};used.forEach((l,i)=>tight[l]=i);
+    const map2=l=>tight[l]!==undefined?tight[l]:-1;
+    cells.forEach(c=>{c.lane=map2(c.lane)});
+    edges.forEach(e=>{e.l0=map2(e.l0);e.l1=map2(e.l1)});
+  }
+
   // column widths / lane centres
   const colW=[],nCols=Math.max(...cells.map(c=>c.col))+1;
   for(let i=0;i<nCols;i++) colW[i]=Math.max(...cells.filter(c=>c.col===i).map(c=>c.w),0)||LY.minW;
@@ -583,7 +608,7 @@ function layoutFlow(forPrint){
   });
   const at=(col,lane)=>cells.find(c=>c.col===col&&c.lane===lane);
   const W=x-LY.colGap+LY.padX;
-  const laneCount=maxLane+1;
+  const laneCount=Math.max(...cells.map(c=>c.lane))+1;
 
   // Bypass edges: run in a reserved lane under the diagram, rise in a gutter.
   const byps=[];
