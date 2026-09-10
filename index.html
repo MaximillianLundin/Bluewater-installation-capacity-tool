@@ -186,7 +186,7 @@ table.tl{border-collapse:collapse;min-width:100%}
   #print-page2{display:block!important;page-break-before:always}
   #print-page2 .fa{overflow:visible;background:#fff;border:none;padding:0}
   /* The SVG carries its own geometry, so viewBox does the fitting -- no zoom hack */
-  svg.flow-p{width:100%!important;height:auto!important;max-height:150mm}
+  svg.flow-p{width:100%!important;height:auto!important;max-height:118mm}
   svg.flow-p .nsel,svg.flow-p .eg-add{display:none}
   svg.flow-p .eg-ln{stroke:#000!important;stroke-width:2!important}
   svg.flow-p .nbx rect{stroke:#000!important;stroke-width:2!important;fill:#fff!important}
@@ -506,6 +506,11 @@ function renumberEq(){
 // clear by construction -- no collision scanning, no overlay, no zoom hack.
 // ================================================================
 const LY={colGap:44,laneGap:30,rowH:50,badgeW:40,badgeH:28,selW:46,selH:30,padX:28,padY:26,minW:118};
+// Paper is width-bound: the drawing is a long strip on a landscape page, so the
+// scale that fits it is set entirely by its width and the height goes unused.
+// Print therefore runs tighter gaps and lets text take two lines, trading the
+// free vertical space for width -- which is what governs how large it prints.
+const LYP={colGap:20,laneGap:26,rowH:62,badgeW:30,badgeH:24,selW:0,selH:0,padX:8,padY:14,minW:74};
 
 let _mctx=null;
 function txtW(s,weight,size){
@@ -513,15 +518,52 @@ function txtW(s,weight,size){
   _mctx.font=weight+' '+size+"px -apple-system,'SF Pro Display','Segoe UI',system-ui,sans-serif";
   return _mctx.measureText(s||'').width;
 }
-function ndSize(nd){
-  if(nd.ct==='select') return {w:LY.selW,h:LY.selH,kind:'sel'};  // stub, not a box
-  if(nd.isCV||nd.isSV||nd.isJ||nd.isY) return {w:LY.badgeW,h:LY.badgeH,kind:'badge'};
-  const w=Math.max(LY.minW,Math.ceil(Math.max(txtW(nd.l,'700',12.5),txtW(nd.s,'500',10.5)))+30);
-  return {w,h:nd.s?48:34,kind:'node'};
+// greedy word wrap to a target width
+function wrapText(str,weight,size,maxW){
+  const words=String(str||'').split(/\s+/).filter(Boolean);
+  if(!words.length) return [];
+  const lines=[];let cur='';
+  words.forEach(w=>{
+    const t=cur?cur+' '+w:w;
+    if(!cur||txtW(t,weight,size)<=maxW) cur=t; else {lines.push(cur);cur=w}
+  });
+  lines.push(cur);
+  return lines;
+}
+function ndSize(nd,M,fp){
+  if(nd.ct==='select') return {w:M.selW,h:M.selH,kind:'sel'};  // stub, not a box
+  if(nd.isCV||nd.isSV||nd.isJ||nd.isY) return {w:M.badgeW,h:M.badgeH,kind:'badge'};
+  const lw=txtW(nd.l,'700',12.5), sw=txtW(nd.s,'500',10.5);
+  if(!fp){
+    const w=Math.max(M.minW,Math.ceil(Math.max(lw,sw))+30);
+    return {w,h:nd.s?48:34,kind:'node'};
+  }
+  // Halving the widest text and wrapping to it roughly squares the box off,
+  // which costs height that is free anyway and buys back width that is not.
+  // Halving the widest text squares the box off, but long words can push it to
+  // four narrow lines, which is harder to read than it is narrow. Widen until
+  // label and detail each fit two lines.
+  const target=Math.max(64,Math.ceil(Math.max(lw,sw)/2));
+  const fit=(str,weight,size)=>{
+    if(!str) return [];
+    let t=target;
+    for(let i=0;i<14;i++){
+      const l=wrapText(str,weight,size,t);
+      if(l.length<=2) return l;
+      t=Math.ceil(t*1.12);
+    }
+    return wrapText(str,weight,size,t);
+  };
+  const ll=fit(nd.l,'700',12.5), sl=fit(nd.s,'500',10.5);
+  const widest=Math.max(...ll.map(t=>txtW(t,'700',12.5)),...sl.map(t=>txtW(t,'500',10.5)),0);
+  const w=Math.max(M.minW,Math.ceil(widest)+16);
+  const h=Math.max(28,ll.length*14+sl.length*12+14);
+  return {w,h,kind:'node',ll,sl};
 }
 
 // Walk the tree assigning cells. Returns the last column the path occupied.
 function layoutFlow(forPrint){
+  const M=forPrint?LYP:LY;
   const cells=[],edges=[],branches=[];
   let maxLane=0;
   // `byp` marks everything belonging to a bypass run, so the whole pipe from the
@@ -535,8 +577,8 @@ function layoutFlow(forPrint){
       if(nd.ct==='select'&&i>0&&path[i-1].isY) continue;
       // on paper the add-slot is not a part, so it gets no column at all
       if(nd.ct==='select'&&forPrint) continue;
-      const sz=ndSize(nd);
-      cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind,byp});
+      const sz=ndSize(nd,M,forPrint);
+      cells.push({nd,pid,idx:i,col:c,lane,w:sz.w,h:sz.h,kind:sz.kind,byp,ll:sz.ll,sl:sz.sl});
       if(i>0) edges.push({kind:'seg',c0:c-1,l0:lane,c1:c,l1:lane,pid,idx:i,byp});
       last=c;
       if(nd.isY&&nd.br){
@@ -555,7 +597,7 @@ function layoutFlow(forPrint){
             // bypass drops straight into it. Both are centred in that column, so
             // the drop is a plain vertical. Bypass parts then run to its right,
             // which keeps the line out to the junction as short as it can be.
-            cells.push({nd,pid,idx:i,col:c,lane:bl,w:76,h:26,kind:'bypend',byp:true});
+            cells.push({nd,pid,idx:i,col:c,lane:bl,w:forPrint?58:76,h:26,kind:'bypend',byp:true});
             edges.push({kind:'vdrop',c0:c,l0:lane,c1:c,l1:bl,byp:true,noclick:true});
             edges.push({kind:'seg',c0:c,l0:bl,c1:c+1,l1:bl,byp:true,noclick:true});
           } else {
@@ -597,17 +639,17 @@ function layoutFlow(forPrint){
 
   // column widths / lane centres
   const colW=[],nCols=Math.max(...cells.map(c=>c.col))+1;
-  for(let i=0;i<nCols;i++) colW[i]=Math.max(...cells.filter(c=>c.col===i).map(c=>c.w),0)||LY.minW;
-  const colX=[];let x=LY.padX;
-  for(let i=0;i<nCols;i++){colX[i]=x;x+=colW[i]+LY.colGap}
-  const laneY=l=>LY.padY+l*(LY.rowH+LY.laneGap)+LY.rowH/2;
+  for(let i=0;i<nCols;i++) colW[i]=Math.max(...cells.filter(c=>c.col===i).map(c=>c.w),0)||M.minW;
+  const colX=[];let x=M.padX;
+  for(let i=0;i<nCols;i++){colX[i]=x;x+=colW[i]+M.colGap}
+  const laneY=l=>M.padY+l*(M.rowH+M.laneGap)+M.rowH/2;
   cells.forEach(c=>{
     c.x=colX[c.col]+(colW[c.col]-c.w)/2;
     c.cy=laneY(c.lane);
     c.y=c.cy-c.h/2;
   });
   const at=(col,lane)=>cells.find(c=>c.col===col&&c.lane===lane);
-  const W=x-LY.colGap+LY.padX;
+  const W=x-M.colGap+M.padX;
   const laneCount=Math.max(...cells.map(c=>c.lane))+1;
 
   // Bypass edges: run in a reserved lane under the diagram, rise in a gutter.
@@ -630,11 +672,11 @@ function layoutFlow(forPrint){
     if(overhead&&end.kind==='sel') end.stubEnd=upX;
     byps.push({end,jc,lane:i,clear:!blocked,overhead,upX});
   });
-  const H=LY.padY*2+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+((byps.filter(b=>!b.clear&&!b.overhead).length)?byps.filter(b=>!b.clear&&!b.overhead).length*16+14:0);
+  const H=M.padY*2+laneCount*M.rowH+(laneCount-1)*M.laneGap+((byps.filter(b=>!b.clear&&!b.overhead).length)?byps.filter(b=>!b.clear&&!b.overhead).length*16+14:0);
   byps.forEach(b=>{
-    b.y=LY.padY+laneCount*LY.rowH+(laneCount-1)*LY.laneGap+12+b.lane*16;
+    b.y=M.padY+laneCount*M.rowH+(laneCount-1)*M.laneGap+12+b.lane*16;
     // rise in the gutter left of the junction's column: no node is ever there
-    b.rx=colX[b.jc.col]-LY.colGap/2;
+    b.rx=colX[b.jc.col]-M.colGap/2;
   });
 
   return {cells,edges,byps,colX,colW,W,H,at,laneY};
@@ -790,7 +832,13 @@ function svgFlow(L,forPrint){
       s+='<circle class="nnum" cx="'+(x+1)+'" cy="'+(y+1)+'" r="10"/>'
         +'<text class="nnumt" x="'+(x+1)+'" y="'+(y+4.5)+'">'+(++num.n)+'</text>';
     }
-    if(nd.s){
+    if(c.ll){
+      // print: label and detail already wrapped to fit the tightened box
+      const total=c.ll.length*14+c.sl.length*12;
+      let ty=c.cy-total/2+11;
+      c.ll.forEach(t=>{s+='<text class="nl" x="'+(x+c.w/2)+'" y="'+ty+'">'+esc(t)+'</text>';ty+=14});
+      c.sl.forEach(t=>{s+='<text class="ns" x="'+(x+c.w/2)+'" y="'+ty+'">'+esc(t)+'</text>';ty+=12});
+    } else if(nd.s){
       s+='<text class="nl" x="'+(x+c.w/2)+'" y="'+(c.cy-3)+'">'+esc(nd.l)+'</text>'
         +'<text class="ns" x="'+(x+c.w/2)+'" y="'+(c.cy+13)+'">'+esc(nd.s)+'</text>';
     } else {
