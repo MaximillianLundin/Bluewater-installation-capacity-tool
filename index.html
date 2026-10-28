@@ -434,8 +434,8 @@ const CAT = {
   rotank:{c:'Storage',l:'RO Tank',s:'50% usable volume',isRT:true},
   watertank:{c:'Storage',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
 
-  cafestation:{c:'Bluewater Products',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
-  cafestationdev:{c:'Bluewater Products',l:'Cafe Station Dev',s:'Choose the mineral tank volume when you add it',isCSD:true},
+  cafestation:{c:'Bluewater Products',l:'Cafe Station',s:'10L mineral tank, fills to 8L, refills from 1L'},
+  cafestationdev:{c:'Bluewater Products',l:'Cafe Station Dev',s:'Refills from 1L, choose the fill-up level when you add it',isCSD:true},
   mineraliser:{c:'Bluewater Products',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
   // Brand signal only: no flow rate, not equipment, so the simulation never sees it
   bwo:{c:'Bluewater Products',l:'Bluewater O',s:'Install visibly on bar, on a Bluewater docking ring',fr:0},
@@ -459,9 +459,9 @@ const PART_SPECS={
   seaflo33:[['Voltage','12V / 24V / 115V / 220V'],['Open flow','10.6–11.3 l/min (2.8–3.0 GPM)'],['Shut-off pressure','3.1 bar (45 PSI)'],['Priming','1.8 m (6 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','1/2\u2033-14 MNPT']]
 };
 
-// Cafe Station mineral tank: float switch starts the refill at trigger, stops at vol.
-// Cafe Station Dev takes its volume from the user and keeps the same trigger ratio.
-const CAFE_TANK={vol:10,trigger:2};
+// Cafe Station mineral tank: size L tank, float switch starts the refill at trigger
+// and stops at fill. Cafe Station Dev keeps the trigger and takes fill from the user.
+const CAFE_TANK={size:10,fill:8,trigger:1};
 
 const DRINKS=[{n:'Espresso',ml:70},{n:'Tea',ml:200},{n:'Americano',ml:150}];
 const ICE_DRINKS=[{n:'Ice Coffee',g:175},{n:'Smoothie',g:150}];
@@ -997,14 +997,14 @@ function doWT(pid,idx){
   ensSel(p);renderFlow();cm();
 }
 
-function csdOpen(pid,idx,verb){sm(`<h3>Cafe Station Dev</h3><p style="font-size:13px;color:var(--g600);margin-bottom:12px">Float switch refills the mineral tank at ${CAFE_TANK.trigger/CAFE_TANK.vol*100}% remaining, stops when full.</p><div style="margin-bottom:12px"><label>Tank volume (L)</label><input type="number" id="csdv" value="${CAFE_TANK.vol}" min="1" max="500" step="0.5" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doCSD('${pid}',${idx})">${verb}</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function csdOpen(pid,idx,verb){sm(`<h3>Cafe Station Dev</h3><p style="font-size:13px;color:var(--g600);margin-bottom:12px">Float switch starts refilling at ${CAFE_TANK.trigger}L left and stops at the fill-up level.</p><div style="margin-bottom:12px"><label>Fill up to (L)</label><input type="number" id="csdv" value="${CAFE_TANK.fill}" min="${CAFE_TANK.trigger+0.5}" max="500" step="0.5" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doCSD('${pid}',${idx})">${verb}</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
 function addCSD(pid,idx){csdOpen(pid,idx,'Add')}
 function insCSD(pid,idx){csdOpen(pid,idx,'Insert')}
 function doCSD(pid,idx){
-  const vol=parseFloat(document.getElementById('csdv').value)||CAFE_TANK.vol;
-  const trigger=+(vol*CAFE_TANK.trigger/CAFE_TANK.vol).toFixed(1);
+  const fill=parseFloat(document.getElementById('csdv').value)||CAFE_TANK.fill;
+  if(fill<=CAFE_TANK.trigger){alert('Fill-up level must be above the '+CAFE_TANK.trigger+'L refill point.');return}
   const p=resP(pid);
-  p.splice(idx,0,{id:gid(),ct:'cafestationdev',l:'Cafe Station Dev ('+vol+'L)',s:vol+'L mineral tank, refills from '+trigger+'L',vol:vol,csTrigger:trigger,isEq:false,isCV:false,isY:false});
+  p.splice(idx,0,{id:gid(),ct:'cafestationdev',l:'Cafe Station Dev ('+fill+'L)',s:'Fills to '+fill+'L, refills from '+CAFE_TANK.trigger+'L',fill:fill,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
 
@@ -1446,10 +1446,10 @@ function runSim(){
   // RO Tank: stored = vol*(1-precharge/3), trigger at 15% remaining
   const rtUsable=tanks.reduce((s,t)=>s+(t.volStored!=null?t.volStored:t.vol*(1-0.5/3)),0);
 
-  // Cafe Station: CAFE_TANK.vol, trigger at CAFE_TANK.trigger (floatswitch), fills to full.
-  // Cafe Station Dev carries its own volume and trigger on the node.
-  const cafeVol=cafes.reduce((s,c)=>s+(c.ct==='cafestationdev'?c.vol:CAFE_TANK.vol),0);
-  const cafeTrigger=cafes.reduce((s,c)=>s+(c.ct==='cafestationdev'?c.csTrigger:CAFE_TANK.trigger),0);
+  // Cafe Station: starts at CAFE_TANK.fill, float switch refills at CAFE_TANK.trigger
+  // back up to fill. Cafe Station Dev carries its own fill level on the node.
+  const cafeVol=cafes.reduce((s,c)=>s+(c.ct==='cafestationdev'?(c.fill||CAFE_TANK.fill):CAFE_TANK.fill),0);
+  const cafeTrigger=cafes.length*CAFE_TANK.trigger;
   let cafeLvl=cafeVol;
   let cafeRefilling=false;
 
