@@ -434,7 +434,8 @@ const CAT = {
   rotank:{c:'Storage',l:'RO Tank',s:'50% usable volume',isRT:true},
   watertank:{c:'Storage',l:'Water Tank w float switch',s:'Float switch: on at 20%, off at 95%',isWT:true},
 
-  cafestation:{c:'Bluewater Products',l:'Cafe Station',s:'10L mineral tank, refills from 2L'},
+  cafestation:{c:'Bluewater Products',l:'Cafe Station',s:'10L mineral tank, fills to 8L, refills from 1L'},
+  cafestationdev:{c:'Bluewater Products',l:'Cafe Station Dev',s:'Refills from 1L, choose the fill-up level when you add it',isCSD:true},
   mineraliser:{c:'Bluewater Products',l:'Mineraliser',s:'Dosing pump, max 1 bar'},
   // Brand signal only: no flow rate, not equipment, so the simulation never sees it
   bwo:{c:'Bluewater Products',l:'Bluewater O',s:'Install visibly on bar, on a Bluewater docking ring',fr:0},
@@ -457,6 +458,10 @@ const PART_SPECS={
   seaflo:[['Voltage','12V / 24V'],['Open flow','1.9–5.6 l/min (0.5–1.5 GPM)'],['Shut-off pressure','2.8–4.8 bar (40–70 PSI)'],['Priming','0.6–1.5 m (2–5 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','5/8\u2033 quick attach']],
   seaflo33:[['Voltage','12V / 24V / 115V / 220V'],['Open flow','10.6–11.3 l/min (2.8–3.0 GPM)'],['Shut-off pressure','3.1 bar (45 PSI)'],['Priming','1.8 m (6 ft) suction lift'],['Max temperature','60 °C (140 °F)'],['Material','EPDM (valves) / Santoprene (diaphragm)'],['Ports','1/2\u2033-14 MNPT']]
 };
+
+// Cafe Station mineral tank: size L tank, float switch starts the refill at trigger
+// and stops at fill. Cafe Station Dev keeps the trigger and takes fill from the user.
+const CAFE_TANK={size:10,fill:8,trigger:1};
 
 const DRINKS=[{n:'Espresso',ml:70},{n:'Tea',ml:200},{n:'Americano',ml:150}];
 const ICE_DRINKS=[{n:'Ice Coffee',g:175},{n:'Smoothie',g:150}];
@@ -924,6 +929,7 @@ function selClick(pid,idx){
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="addRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isWT) h+=`<div class="mbt" onclick="addWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isCSD) h+=`<div class="mbt" onclick="addCSD('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isCustom) h+=`<div class="mbt" onclick="addCustom('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="addN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
@@ -939,6 +945,7 @@ function lnClick(pid,idx){
     if(c.c!==lc){h+=`<div class="mcat">${c.c}</div>`;lc=c.c}
     if(c.isRT) h+=`<div class="mbt" onclick="insRT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isWT) h+=`<div class="mbt" onclick="insWT('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
+    else if(c.isCSD) h+=`<div class="mbt" onclick="insCSD('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else if(c.isCustom) h+=`<div class="mbt" onclick="insCustom('${pid}',${idx})"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
     else h+=`<div class="mbt" onclick="insN('${pid}',${idx},'${k}')"><strong>${c.l}</strong> <span class="ms">${c.s}</span></div>`;
   }
@@ -987,6 +994,17 @@ function doWT(pid,idx){
   const stopAt=+(vol*0.95).toFixed(1);
   const p=resP(pid);
   p.splice(idx,0,{id:gid(),ct:'watertank',l:'Water Tank ('+vol+'L)',s:'On at '+trigger+'L · Off at '+stopAt+'L',vol:vol,wtTrigger:trigger,wtStop:stopAt,isEq:false,isCV:false,isY:false});
+  ensSel(p);renderFlow();cm();
+}
+
+function csdOpen(pid,idx,verb){sm(`<h3>Cafe Station Dev</h3><p style="font-size:13px;color:var(--g600);margin-bottom:12px">Float switch starts refilling at ${CAFE_TANK.trigger}L left and stops at the fill-up level.</p><div style="margin-bottom:12px"><label>Fill up to (L)</label><input type="number" id="csdv" value="${CAFE_TANK.fill}" min="${CAFE_TANK.trigger+0.5}" max="500" step="0.5" onfocus="this.select()"></div><div class="ma"><button class="bp bsm" onclick="doCSD('${pid}',${idx})">${verb}</button><button class="bs bsm" onclick="cm()">Cancel</button></div>`)}
+function addCSD(pid,idx){csdOpen(pid,idx,'Add')}
+function insCSD(pid,idx){csdOpen(pid,idx,'Insert')}
+function doCSD(pid,idx){
+  const fill=parseFloat(document.getElementById('csdv').value)||CAFE_TANK.fill;
+  if(fill<=CAFE_TANK.trigger){alert('Fill-up level must be above the '+CAFE_TANK.trigger+'L refill point.');return}
+  const p=resP(pid);
+  p.splice(idx,0,{id:gid(),ct:'cafestationdev',l:'Cafe Station Dev ('+fill+'L)',s:'Fills to '+fill+'L, refills from '+CAFE_TANK.trigger+'L',fill:fill,isEq:false,isCV:false,isY:false});
   ensSel(p);renderFlow();cm();
 }
 
@@ -1109,7 +1127,7 @@ function buildPartsList(){
 }
 function colRT(p){let t=[];p.forEach(n=>{if(n.ct==='rotank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colRT(b))})});return t}
 function colWT(p){let t=[];p.forEach(n=>{if(n.ct==='watertank')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colWT(b))})});return t}
-function hasCS(p){let f=false;p.forEach(n=>{if(n.ct==='cafestation')f=true;if(n.isY&&n.br)n.br.forEach(b=>{if(hasCS(b))f=true})});return f}
+function colCS(p){let t=[];p.forEach(n=>{if(n.ct==='cafestation'||n.ct==='cafestationdev')t.push(n);if(n.isY&&n.br)n.br.forEach(b=>{t=t.concat(colCS(b))})});return t}
 // Returns equipment node IDs that are downstream of a node with ct=targetCt in the tree
 function eqIdsDownstreamOf(path,targetCt){
   let found=false;let ids=[];
@@ -1423,12 +1441,16 @@ function runSim(){
   const ppm=ro?ro.fr:0;
   const tanks=colRT(mainPath);
   const wtanks=colWT(mainPath);
-  const cafe=hasCS(mainPath);
+  const cafes=colCS(mainPath);
+  const cafe=cafes.length>0;
   // RO Tank: stored = vol*(1-precharge/3), trigger at 15% remaining
   const rtUsable=tanks.reduce((s,t)=>s+(t.volStored!=null?t.volStored:t.vol*(1-0.5/3)),0);
 
-  // Cafe Station: 10L, trigger at 2L (floatswitch), fills to 10L
-  let cafeLvl=cafe?10:0;
+  // Cafe Station: starts at CAFE_TANK.fill, float switch refills at CAFE_TANK.trigger
+  // back up to fill. Cafe Station Dev carries its own fill level on the node.
+  const cafeVol=cafes.reduce((s,c)=>s+(c.ct==='cafestationdev'?(c.fill||CAFE_TANK.fill):CAFE_TANK.fill),0);
+  const cafeTrigger=cafes.length*CAFE_TANK.trigger;
+  let cafeLvl=cafeVol;
   let cafeRefilling=false;
 
   // RO Tank: trigger when 85% consumed (15% remaining), fills to full stored volume
@@ -1464,7 +1486,7 @@ function runSim(){
   });
 
   // Pre-compute which equipment draws from which tank source
-  const cafeEqIds=eqIdsDownstreamOf(mainPath,'cafestation');
+  const cafeEqIds=[...new Set(eqIdsDownstreamOf(mainPath,'cafestation').concat(eqIdsDownstreamOf(mainPath,'cafestationdev')))];
   const roEqIds=eqIdsDownstreamOf(mainPath,'rotank');
   const wtEqIds=eqIdsDownstreamOf(mainPath,'watertank');
   const hwEqIds=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='hotwater').map(e=>e.id);
@@ -1501,8 +1523,8 @@ function runSim(){
 
     // --- Refill triggers (update flags based on levels) ---
     if(cafe){
-      if(cafeLvl<=2) cafeRefilling=true;
-      if(cafeLvl>=10) cafeRefilling=false;
+      if(cafeLvl<=cafeTrigger) cafeRefilling=true;
+      if(cafeLvl>=cafeVol) cafeRefilling=false;
     }
     if(rtUsable>0){
       if(roLvl<=roTrigger) roRefilling=true;
@@ -1553,7 +1575,7 @@ function runSim(){
       if(hwDraw>0) pressureRiskMins++;
     }
 
-    if(cafe&&cafeRefilling){cafeLvl+=spiritShare;if(cafeLvl>10)cafeLvl=10;}
+    if(cafe&&cafeRefilling){cafeLvl+=spiritShare;if(cafeLvl>cafeVol)cafeLvl=cafeVol;}
     if(rtUsable>0&&roRefilling){roLvl+=spiritShare;if(roLvl>rtUsable)roLvl=rtUsable;}
     if(wtTotalVol>0&&wtRefilling){wtLvl+=spiritShare;if(wtLvl>wtStopLvl)wtLvl=wtStopLvl;}
 
