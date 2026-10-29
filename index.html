@@ -1458,12 +1458,12 @@ function runSim(){
   let roRefilling=false;
   const roTrigger=rtUsable*0.15;
 
-  // Water Tank w float switch: trigger at 20%, stop at 95%
+  // Water Tank w float switch: trigger at 20%, stop at 95%; starts the hour at its 95% fill-up level
   const wtTotalVol=wtanks.reduce((s,t)=>s+(t.vol||0),0);
-  let wtLvl=wtTotalVol;
-  let wtRefilling=false;
   const wtTriggerLvl=wtTotalVol*0.20;
   const wtStopLvl=wtTotalVol*0.95;
+  let wtLvl=wtStopLvl;
+  let wtRefilling=false;
 
   // Filter Brewer: starts with full cold water tank; brew triggered at triggerCups;
   // 6 min brew delay, then RO refills cold water volume
@@ -1491,7 +1491,9 @@ function runSim(){
   const wtEqIds=eqIdsDownstreamOf(mainPath,'watertank');
   const hwEqIds=colEq(mainPath).filter(e=>eqCfg[e.id]?.t==='hotwater').map(e=>e.id);
 
-  const mins=[],demD=[],prodD=[],roD=[],cafeD=[],wtD=[];
+  const mins=[],demD=[],prodD=[];
+  // Tank levels: index 0 is the start of the hour (every tank full), index m+1 the level after minute m
+  const roD=[roLvl],cafeD=[cafeLvl],wtD=[wtLvl];
   let totalDem=0,defMin=0,overloadMins=0,pressureRiskMins=0;
 
   for(let m=0;m<60;m++){
@@ -1661,7 +1663,7 @@ function runSim(){
   if(wtTotalVol>0)ds.push({label:'Water Tank ('+tU+')',data:imp?wtD.map(v=>lV(v)):wtD,borderColor:'#2E7D32',backgroundColor:'rgba(46,125,50,.1)',fill:true,tension:.3,borderWidth:2});
 
   tCh=new Chart(document.getElementById('tc').getContext('2d'),{
-    type:'line',data:{labels:mins.map(String),datasets:ds},
+    type:'line',data:{labels:mins.concat(60).map(String),datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{title:{display:true,text:'Tank Levels',font:{size:14}},legend:{position:'top'}},
       scales:{x:{title:{display:true,text:'Minute'}},y:{title:{display:true,text:tU},beginAtZero:true}}}
